@@ -456,16 +456,19 @@
         <!-- Tab: Upload file -->
         <div class="import-content" id="tab-upload">
             <p style="margin-bottom:10px;color:var(--text-light);font-size:0.9em">上传 PDF / DOCX / DOC 文件，系统将自动解析文件名并添加到知识库</p>
-            <div class="drop-zone" id="docDropZone" onclick="document.getElementById('docFileInput').click()">
-                📂 点击选择或拖入 PDF / DOCX / DOC 文件
-            </div>
-            <input type="file" id="docFileInput" accept=".pdf,.docx,.doc" style="display:none" onchange="handleDocUpload(event)">
-            <div id="uploadPreview" style="display:none;background:var(--primary-light);padding:12px;border-radius:8px;margin-bottom:12px;">
-                <div style="font-weight:600;color:var(--primary-dark);margin-bottom:8px;">📋 解析结果预览：</div>
-                <div id="uploadPreviewContent" style="font-size:0.85em;line-height:1.8;"></div>
-            </div>
-            <button class="btn btn-primary" id="uploadConfirmBtn" style="display:none;" onclick="confirmDocUpload()">✅ 确认添加到知识库</button>
+        <div class="drop-zone" id="docDropZone" onclick="document.getElementById('docFileInput').click()">
+            📂 点击选择或拖入 PDF / DOCX / DOC 文件（支持多选）
         </div>
+        <input type="file" id="docFileInput" multiple accept=".pdf,.docx,.doc" style="display:none" onchange="handleDocUpload(event)">
+        <div id="uploadPreview" style="display:none;background:var(--primary-light);padding:12px;border-radius:8px;margin-bottom:12px;">
+            <div style="font-weight:600;color:var(--primary-dark);margin-bottom:8px;">📋 解析结果预览（<span id="previewCount">0</span> 个文件）：</div>
+            <div id="uploadPreviewContent" style="font-size:0.85em;line-height:1.8;max-height:300px;overflow-y:auto;"></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:8px;">
+            <button class="btn btn-primary" id="uploadConfirmBtn" style="display:none;" onclick="confirmDocUpload()">✅ 确认全部添加到知识库</button>
+            <button class="btn btn-outline" id="uploadClearBtn" style="display:none;" onclick="clearDocUpload()">🗑️ 清空列表</button>
+        </div>
+    </div>
 
         <!-- Tab: JSON paste -->
         <div class="import-content" id="tab-json">
@@ -748,124 +751,146 @@ function handleFileImport(e) {
     e.target.value = '';
 }
 
-// ==================== DOC FILE UPLOAD ====================
-let pendingUploadDoc = null;
+// ==================== BATCH DOC FILE UPLOAD ====================
+let pendingUploadDocs = [];
 
 function handleDocUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const ext = file.name.split('.').pop().toLowerCase();
-    if (!['pdf','docx','doc'].includes(ext)) {
-        showToast('❌ 仅支持 PDF、DOCX、DOC 格式', '#f44336');
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    let added = 0, skip = 0;
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!['pdf','docx','doc'].includes(ext)) { skip++; continue; }
+        if (pendingUploadDocs.some(d => d.filename === file.name)) { skip++; continue; }
+        if (DB.some(d => d.filename === file.name)) { skip++; continue; }
+        const parsed = parseFilename(file.name);
+        parsed.filename = file.name;
+        parsed.format = ext;
+        parsed.path = '使用说明书/' + file.name;
+        pendingUploadDocs.push(parsed);
+        added++;
+    }
+    if (pendingUploadDocs.length === 0) {
+        showToast('⚠️ 没有可添加的文件（格式不支持或已存在）', '#ff9800');
         return;
     }
-    const parsed = parseFilename(file.name);
-    pendingUploadDoc = { ...parsed, file: file };
+    renderUploadPreview();
+    document.getElementById('uploadPreview').style.display = 'block';
+    document.getElementById('uploadConfirmBtn').style.display = 'inline-block';
+    document.getElementById('uploadClearBtn').style.display = 'inline-block';
+    let msg = '✅ 已解析 ' + pendingUploadDocs.length + ' 个文件';
+    if (skip > 0) msg += '（跳过 ' + skip + ' 个）';
+    showToast(msg);
+}
 
-    // Show preview
-    const preview = document.getElementById('uploadPreview');
+function renderUploadPreview() {
     const content = document.getElementById('uploadPreviewContent');
-    const confirmBtn = document.getElementById('uploadConfirmBtn');
+    document.getElementById('previewCount').textContent = pendingUploadDocs.length;
+    let html = '<table style="width:100%;border-collapse:collapse;font-size:0.9em;">';
+    html += '<tr style="background:#e8eaf6;"><th style="text-align:left;padding:4px 8px;">文件名</th><th style="text-align:left;padding:4px 8px;">系列</th><th style="text-align:left;padding:4px 8px;">年份</th><th style="text-align:left;padding:4px 8px;">版本</th></tr>';
+    pendingUploadDocs.forEach((doc, idx) => {
+        const bg = idx % 2 === 0 ? '#fafafa' : 'white';
+        html += '<tr style="background:' + bg + ';"><td style="padding:4px 8px;">' + doc.filename + '</td><td style="padding:4px 8px;">' + doc.series + '</td><td style="padding:4px 8px;">' + doc.year + '</td><td style="padding:4px 8px;">' + doc.version + '</td></tr>';
+    });
+    html += '</table>';
+    content.innerHTML = html;
+}
 
-    content.innerHTML = `
-        <div><b>📄 文件名：</b>${file.name}</div>
-        <div><b>📛 文档名称：</b>${parsed.name}</div>
-        <div><b>📦 系列：</b>${parsed.series}</div>
-        <div><b>📅 年份：</b>${parsed.year}</div>
-        <div><b>🔖 版本：</b>${parsed.version}</div>
-        <div><b>📂 格式：</b>${parsed.format.toUpperCase()}</div>
-        <div><b>🏷️ 标签：</b>${parsed.tags.join(', ')}</div>
-    `;
-    preview.style.display = 'block';
-    confirmBtn.style.display = 'inline-block';
-    showToast('✅ 文件解析成功，请确认添加');
+function clearDocUpload() {
+    pendingUploadDocs = [];
+    document.getElementById('uploadPreview').style.display = 'none';
+    document.getElementById('uploadConfirmBtn').style.display = 'none';
+    document.getElementById('uploadClearBtn').style.display = 'none';
+    document.getElementById('docFileInput').value = '';
+    showToast('🗑️ 已清空上传列表');
 }
 
 function parseFilename(filename) {
-    // Remove extension
     const ext = filename.split('.').pop().toLowerCase();
-    const base = filename.replace(/\.[^.]+$/, '');
+    let base = filename.replace(/\.[^.]+$/, '');
 
-    // Try to extract year and version: _YYYYVX.X or _YYYYV.X or _YYYY
     let year = '';
     let version = '';
     let namePart = base;
 
-    const versionMatch = base.match(/_(\d{4})(V[\d.]+)$/i);
-    if (versionMatch) {
-        year = versionMatch[1];
-        version = versionMatch[2].toUpperCase();
-        namePart = base.substring(0, versionMatch.index);
+    // Pattern 1: _YYYYV1.0 or _YYYYV1
+    let m = base.match(/_(\d{4})(V[\d.]*)$/i);
+    if (m) {
+        year = m[1];
+        version = m[2].toUpperCase();
+        if (!version.match(/\./)) version += '.0';
+        namePart = base.substring(0, m.index);
     } else {
-        const yearMatch = base.match(/_(\d{4})$/);
-        if (yearMatch) {
-            year = yearMatch[1];
+        // Pattern 2: _YYYY (year only)
+        m = base.match(/_(\d{4})$/);
+        if (m) {
+            year = m[1];
             version = 'V1.0';
-            namePart = base.substring(0, yearMatch.index);
+            namePart = base.substring(0, m.index);
         } else {
-            year = new Date().getFullYear().toString();
-            version = 'V1.0';
+            m = base.match(/(\d{4})/);
+            if (m) { year = m[1]; version = 'V1.0'; }
+            else { year = new Date().getFullYear().toString(); version = 'V1.0'; }
         }
     }
 
-    // Extract series from name
+    // Smart series matching (sorted by length desc)
     let series = '其他';
-    const seriesMap = {
-        'K1': 'K系列', 'K3': 'K系列', 'K8': 'K系列',
-        'T1': 'T系列', 'T3': 'T系列', 'T5': 'T系列', 'T1S': 'T系列', 'T1 Pro': 'T系列', 'T3 Pro': 'T系列',
-        '95': '95系列', '新95W': '95系列',
-        'i3': 'i3系列', 'i3 Pro': 'i3系列',
-        'P1': 'P系列',
-        'J7': 'J系列', 'J15': 'J系列', 'J16': 'J系列', 'J17': 'J系列'
-    };
-    for (const [key, val] of Object.entries(seriesMap)) {
-        if (namePart.includes(key)) {
-            series = val;
-            break;
-        }
+    const seriesMap = [
+        ['K3Turbo','K系列'], ['T1 Pro','T系列'], ['T3 Pro','T系列'], ['i3 Pro','i3系列'], ['新95W','95系列'],
+        ['K1','K系列'], ['K3','K系列'], ['K8','K系列'],
+        ['T1S','T系列'], ['T1','T系列'], ['T3','T系列'], ['T5','T系列'],
+        ['95W','95系列'], ['95','95系列'],
+        ['i3','i3系列'], ['P1','P系列'],
+        ['J7','J系列'], ['J15','J系列'], ['J16','J系列'], ['J17','J系列']
+    ];
+    for (const entry of seriesMap) {
+        if (namePart.includes(entry[0])) { series = entry[1]; break; }
     }
 
-    // Generate tags
+    // Auto tags
     const tags = [series];
-    if (namePart.includes('快速指南')) tags.push('快速指南');
-    if (namePart.includes('使用说明书')) tags.push('说明书');
-    if (namePart.includes('用户设置手册')) tags.push('设置手册');
-    if (namePart.includes('无线') || namePart.includes('BT')) tags.push('无线');
-    if (namePart.includes('有线')) tags.push('有线');
-    if (namePart.includes('蓝牙')) tags.push('蓝牙');
+    if (/快速指南|快速使用/.test(namePart)) tags.push('快速指南');
+    if (/使用说明书|用户手册|说明书/.test(namePart)) tags.push('说明书');
+    if (/设置手册|配置手册/.test(namePart)) tags.push('设置手册');
+    if (/无线|Wireless/.test(namePart)) tags.push('无线');
+    if (/有线|Wired/.test(namePart)) tags.push('有线');
+    if (/蓝牙|BT/.test(namePart)) tags.push('蓝牙');
+    if (/充电|Charging/.test(namePart)) tags.push('充电');
+    if (/维修|维修手册/.test(namePart)) tags.push('维修');
 
-    // Extract product short name for ID
-    let shortName = namePart.replace(/^CN_/, '').replace(/iData\s*/, '').trim();
-    shortName = shortName.split(/[\s_]/)[0] || 'doc';
+    let shortName = namePart.replace(/^CN_/, '').replace(/iData\s*/i, '').trim();
+    shortName = (shortName.split(/[\s_]/)[0] || 'doc');
 
     return {
-        id: `${shortName.replace(/[^a-zA-Z0-9]/g,'')}-${Date.now()}`,
+        id: shortName.replace(/[^a-zA-Z0-9]/g, '') + '-' + Date.now() + '-' + Math.random().toString(36).substr(2,4),
         series: series,
         name: namePart,
         year: year,
         version: version,
-        format: ext,
-        filename: filename,
-        path: `使用说明书/${filename}`,
         tags: tags
     };
 }
 
 function confirmDocUpload() {
-    if (!pendingUploadDoc) {
+    if (pendingUploadDocs.length === 0) {
         showToast('⚠️ 请先选择文件', '#f44336');
         return;
     }
-    DB.push(pendingUploadDoc);
+    const count = pendingUploadDocs.length;
+    pendingUploadDocs.forEach(d => {
+        const { file, ...doc } = d;
+        DB.push(doc);
+    });
     updateSeriesFilter();
     renderStats();
     renderDocs();
-    showToast('✅ 已添加: ' + pendingUploadDoc.name);
-
-    // Reset
-    pendingUploadDoc = null;
+    showToast('✅ 已添加 ' + count + ' 个文档');
+    pendingUploadDocs = [];
     document.getElementById('uploadPreview').style.display = 'none';
     document.getElementById('uploadConfirmBtn').style.display = 'none';
+    document.getElementById('uploadClearBtn').style.display = 'none';
     document.getElementById('docFileInput').value = '';
 }
 
@@ -877,10 +902,9 @@ if (docDropZone) {
     docDropZone.addEventListener('drop', e => {
         e.preventDefault();
         docDropZone.classList.remove('drag-over');
-        const file = e.dataTransfer.files[0];
-        if (file) {
-            const fakeEvent = { target: { files: [file] } };
-            handleDocUpload(fakeEvent);
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+            handleDocUpload({ target: { files: files } });
         }
     });
 }
