@@ -423,6 +423,7 @@
         <h3>📥 导入 / 更新文档</h3>
         <div class="import-tabs">
             <div class="import-tab active" onclick="switchTab(this,'tab-manual')">➕ 手动添加</div>
+            <div class="import-tab" onclick="switchTab(this,'tab-upload')">📁 上传文件</div>
             <div class="import-tab" onclick="switchTab(this,'tab-json')">📋 导入 JSON</div>
             <div class="import-tab" onclick="switchTab(this,'tab-file')">📁 导入 JSON 文件</div>
         </div>
@@ -450,6 +451,20 @@
                 <input id="f-tags" placeholder="标签（逗号分隔）" style="flex:2"/>
             </div>
             <button class="btn btn-primary" onclick="addManual()">✅ 添加到知识库</button>
+        </div>
+
+        <!-- Tab: Upload file -->
+        <div class="import-content" id="tab-upload">
+            <p style="margin-bottom:10px;color:var(--text-light);font-size:0.9em">上传 PDF / DOCX / DOC 文件，系统将自动解析文件名并添加到知识库</p>
+            <div class="drop-zone" id="docDropZone" onclick="document.getElementById('docFileInput').click()">
+                📂 点击选择或拖入 PDF / DOCX / DOC 文件
+            </div>
+            <input type="file" id="docFileInput" accept=".pdf,.docx,.doc" style="display:none" onchange="handleDocUpload(event)">
+            <div id="uploadPreview" style="display:none;background:var(--primary-light);padding:12px;border-radius:8px;margin-bottom:12px;">
+                <div style="font-weight:600;color:var(--primary-dark);margin-bottom:8px;">📋 解析结果预览：</div>
+                <div id="uploadPreviewContent" style="font-size:0.85em;line-height:1.8;"></div>
+            </div>
+            <button class="btn btn-primary" id="uploadConfirmBtn" style="display:none;" onclick="confirmDocUpload()">✅ 确认添加到知识库</button>
         </div>
 
         <!-- Tab: JSON paste -->
@@ -733,7 +748,144 @@ function handleFileImport(e) {
     e.target.value = '';
 }
 
-// Drag and drop
+// ==================== DOC FILE UPLOAD ====================
+let pendingUploadDoc = null;
+
+function handleDocUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['pdf','docx','doc'].includes(ext)) {
+        showToast('❌ 仅支持 PDF、DOCX、DOC 格式', '#f44336');
+        return;
+    }
+    const parsed = parseFilename(file.name);
+    pendingUploadDoc = { ...parsed, file: file };
+
+    // Show preview
+    const preview = document.getElementById('uploadPreview');
+    const content = document.getElementById('uploadPreviewContent');
+    const confirmBtn = document.getElementById('uploadConfirmBtn');
+
+    content.innerHTML = `
+        <div><b>📄 文件名：</b>${file.name}</div>
+        <div><b>📛 文档名称：</b>${parsed.name}</div>
+        <div><b>📦 系列：</b>${parsed.series}</div>
+        <div><b>📅 年份：</b>${parsed.year}</div>
+        <div><b>🔖 版本：</b>${parsed.version}</div>
+        <div><b>📂 格式：</b>${parsed.format.toUpperCase()}</div>
+        <div><b>🏷️ 标签：</b>${parsed.tags.join(', ')}</div>
+    `;
+    preview.style.display = 'block';
+    confirmBtn.style.display = 'inline-block';
+    showToast('✅ 文件解析成功，请确认添加');
+}
+
+function parseFilename(filename) {
+    // Remove extension
+    const ext = filename.split('.').pop().toLowerCase();
+    const base = filename.replace(/\.[^.]+$/, '');
+
+    // Try to extract year and version: _YYYYVX.X or _YYYYV.X or _YYYY
+    let year = '';
+    let version = '';
+    let namePart = base;
+
+    const versionMatch = base.match(/_(\d{4})(V[\d.]+)$/i);
+    if (versionMatch) {
+        year = versionMatch[1];
+        version = versionMatch[2].toUpperCase();
+        namePart = base.substring(0, versionMatch.index);
+    } else {
+        const yearMatch = base.match(/_(\d{4})$/);
+        if (yearMatch) {
+            year = yearMatch[1];
+            version = 'V1.0';
+            namePart = base.substring(0, yearMatch.index);
+        } else {
+            year = new Date().getFullYear().toString();
+            version = 'V1.0';
+        }
+    }
+
+    // Extract series from name
+    let series = '其他';
+    const seriesMap = {
+        'K1': 'K系列', 'K3': 'K系列', 'K8': 'K系列',
+        'T1': 'T系列', 'T3': 'T系列', 'T5': 'T系列', 'T1S': 'T系列', 'T1 Pro': 'T系列', 'T3 Pro': 'T系列',
+        '95': '95系列', '新95W': '95系列',
+        'i3': 'i3系列', 'i3 Pro': 'i3系列',
+        'P1': 'P系列',
+        'J7': 'J系列', 'J15': 'J系列', 'J16': 'J系列', 'J17': 'J系列'
+    };
+    for (const [key, val] of Object.entries(seriesMap)) {
+        if (namePart.includes(key)) {
+            series = val;
+            break;
+        }
+    }
+
+    // Generate tags
+    const tags = [series];
+    if (namePart.includes('快速指南')) tags.push('快速指南');
+    if (namePart.includes('使用说明书')) tags.push('说明书');
+    if (namePart.includes('用户设置手册')) tags.push('设置手册');
+    if (namePart.includes('无线') || namePart.includes('BT')) tags.push('无线');
+    if (namePart.includes('有线')) tags.push('有线');
+    if (namePart.includes('蓝牙')) tags.push('蓝牙');
+
+    // Extract product short name for ID
+    let shortName = namePart.replace(/^CN_/, '').replace(/iData\s*/, '').trim();
+    shortName = shortName.split(/[\s_]/)[0] || 'doc';
+
+    return {
+        id: `${shortName.replace(/[^a-zA-Z0-9]/g,'')}-${Date.now()}`,
+        series: series,
+        name: namePart,
+        year: year,
+        version: version,
+        format: ext,
+        filename: filename,
+        path: `使用说明书/${filename}`,
+        tags: tags
+    };
+}
+
+function confirmDocUpload() {
+    if (!pendingUploadDoc) {
+        showToast('⚠️ 请先选择文件', '#f44336');
+        return;
+    }
+    DB.push(pendingUploadDoc);
+    updateSeriesFilter();
+    renderStats();
+    renderDocs();
+    showToast('✅ 已添加: ' + pendingUploadDoc.name);
+
+    // Reset
+    pendingUploadDoc = null;
+    document.getElementById('uploadPreview').style.display = 'none';
+    document.getElementById('uploadConfirmBtn').style.display = 'none';
+    document.getElementById('docFileInput').value = '';
+}
+
+// Drag and drop for doc upload
+const docDropZone = document.getElementById('docDropZone');
+if (docDropZone) {
+    docDropZone.addEventListener('dragover', e => { e.preventDefault(); docDropZone.classList.add('drag-over'); });
+    docDropZone.addEventListener('dragleave', () => docDropZone.classList.remove('drag-over'));
+    docDropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        docDropZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            const fakeEvent = { target: { files: [file] } };
+            handleDocUpload(fakeEvent);
+        }
+    });
+}
+
+// Drag and drop for JSON file
 const dropZone = document.getElementById('dropZone');
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
