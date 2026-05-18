@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iData 产品文档知识库</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #5c6bc0;
+            --primary-dark: #3949ab;
+            --primary-light: #e8eaf6;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --gray: #f5f5f5;
+            --border: #e0e0e0;
+            --text: #333;
+            --text-light: #777;
+            --radius: 12px;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            color: var(--text);
+        }
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, #7c4dff 100%);
+            color: white;
+            padding: 40px 20px 30px;
+        }
+        .header-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .header h1 { font-size: 2em; margin-bottom: 8px; }
+        .header p { opacity: 0.85; font-size: 1em; }
+        /* Stats bar */
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .stat { background: rgba(255,255,255,0.15); border-radius: 8px; padding: 8px 18px; font-size: 0.9em; backdrop-filter: blur(5px); }
+
+        /* Toolbar */
+        .toolbar {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            padding: 16px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .toolbar-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            display: flex;
+            align-items: center;
+            background: var(--gray);
+            border-radius: 8px;
+            padding: 0 14px;
+            border: 1px solid var(--border);
+        }
+        .search-box input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 10px 8px;
+            font-size: 0.95em;
+            outline: none;
+        }
+        .filter-select {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: white;
+            font-size: 0.9em;
+            cursor: pointer;
+            outline: none;
+        }
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #388e3c; }
+        .btn-outline {
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .btn-outline:hover { background: var(--gray); }
+
+        /* Main content */
+        .main {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* Category */
+        .category { margin-bottom: 30px; }
+        .category-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .category-title {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .category-count {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        /* Doc grid */
+        .doc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 14px;
+        }
+        .doc-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            border: 1px solid var(--border);
+            transition: all 0.25s;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .doc-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 20px rgba(92, 107, 192, 0.15);
+            transform: translateY(-2px);
+        }
+        .doc-card-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .doc-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3em;
+            flex-shrink: 0;
+        }
+        .icon-pdf { background: #fde8e8; }
+        .icon-docx { background: #e3f2fd; }
+        .icon-doc { background: #e8f5e9; }
+        .doc-info { flex: 1; min-width: 0; }
+        .doc-name {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.95em;
+            line-height: 1.4;
+            margin-bottom: 4px;
+        }
+        .doc-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .badge {
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.72em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-pdf { background: #ff5252; color: white; }
+        .badge-doc { background: #2196f3; color: white; }
+        .badge-docx { background: #1565c0; color: white; }
+        .doc-version { color: var(--text-light); font-size: 0.8em; }
+        .doc-year { color: var(--text-light); font-size: 0.8em; }
+        .doc-filename {
+            font-size: 0.78em;
+            color: var(--text-light);
+            word-break: break-all;
+            background: var(--gray);
+            padding: 5px 8px;
+            border-radius: 6px;
+        }
+        .doc-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .doc-actions a {
+            flex: 1;
+            text-align: center;
+            text-decoration: none;
+        }
+        .download-btn {
+            display: block;
+            width: 100%;
+            padding: 9px;
+            background: linear-gradient(135deg, var(--primary) 0%, #7c4dff 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.88em;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-family: inherit;
+        }
+        .download-btn:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+
+        /* Import panel */
+        .import-panel {
+            background: white;
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 30px;
+            border: 2px dashed var(--border);
+            display: none;
+        }
+        .import-panel.visible { display: block; }
+        .import-panel h3 { margin-bottom: 16px; color: var(--primary-dark); }
+        .import-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .import-tab {
+            padding: 7px 16px;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            font-size: 0.9em;
+            border: 1px solid transparent;
+        }
+        .import-tab.active {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            border-color: var(--border);
+            font-weight: 600;
+        }
+        .import-content { display: none; }
+        .import-content.active { display: block; }
+        .import-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .import-row input, .import-row select {
+            flex: 1;
+            min-width: 150px;
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9em;
+            outline: none;
+        }
+        .import-row input:focus, .import-row select:focus {
+            border-color: var(--primary);
+        }
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-light);
+            margin-bottom: 12px;
+        }
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            color: var(--primary-dark);
+        }
+        .json-textarea {
+            width: 100%;
+            height: 180px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.85em;
+            resize: vertical;
+            outline: none;
+            margin-bottom: 10px;
+        }
+        .json-textarea:focus { border-color: var(--primary); }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #333;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            z-index: 999;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s;
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* No result */
+        .no-result {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-light);
+            font-size: 1em;
+        }
+
+        .update-badge {
+            background: #ff9800;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.7em;
+            font-weight: 700;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--text-light);
+            font-size: 0.88em;
+            border-top: 1px solid var(--border);
+            margin-top: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 { font-size: 1.6em; }
+            .doc-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-inner">
+        <h1>📚 iData 产品文档知识库</h1>
+        <p>iData 全系列 PDA 设备 · 使用说明书 &amp; 快速指南</p>
+        <div class="stats-bar">
+            <div class="stat" id="statTotal">📄 共 — 份文档</div>
+            <div class="stat" id="statSeries">📦 — 个系列</div>
+            <div class="stat" id="statUpdate">🕐 —</div>
+        </div>
+    </div>
+</div>
+
+<div class="toolbar">
+    <div class="toolbar-inner">
+        <div class="search-box">
+            <span>🔍</span>
+            <input type="text" id="searchInput" placeholder="搜索型号、文档名..." oninput="renderDocs()">
+        </div>
+        <select class="filter-select" id="seriesFilter" onchange="renderDocs()">
+            <option value="">全部系列</option>
+        </select>
+        <select class="filter-select" id="formatFilter" onchange="renderDocs()">
+            <option value="">全部格式</option>
+            <option value="pdf">PDF</option>
+            <option value="docx">DOCX</option>
+            <option value="doc">DOC</option>
+        </select>
+        <button class="btn btn-outline" onclick="toggleImport()">➕ 导入更新</button>
+        <button class="btn btn-success" onclick="exportJSON()">💾 导出清单</button>
+        <button class="btn btn-primary" onclick="downloadAll()">⬇️ 下载全部</button>
+    </div>
+</div>
+
+<div class="main">
+
+    <!-- Import Panel -->
+    <div class="import-panel" id="importPanel">
+        <h3>📥 导入 / 更新文档</h3>
+        <div class="import-tabs">
+            <div class="import-tab active" onclick="switchTab(this,'tab-manual')">➕ 手动添加</div>
+            <div class="import-tab" onclick="switchTab(this,'tab-json')">📋 导入 JSON</div>
+            <div class="import-tab" onclick="switchTab(this,'tab-file')">📁 导入 JSON 文件</div>
+        </div>
+
+        <!-- Tab: manual -->
+        <div class="import-content active" id="tab-manual">
+            <div class="import-row">
+                <input id="f-name" placeholder="文档名称（必填）" />
+                <select id="f-series">
+                    <option value="">选择系列</option>
+                </select>
+                <select id="f-format">
+                    <option value="pdf">PDF</option>
+                    <option value="docx">DOCX</option>
+                    <option value="doc">DOC</option>
+                </select>
+            </div>
+            <div class="import-row">
+                <input id="f-filename" placeholder="文件名（如: CN_iData XX_2025V1.0.pdf）" />
+                <input id="f-version" placeholder="版本（如: V1.0）" />
+                <input id="f-year" placeholder="年份（如: 2025）" />
+            </div>
+            <div class="import-row">
+                <input id="f-path" placeholder="路径（如: 使用说明书/CN_iData XX_2025V1.0.pdf）" style="flex:3" />
+                <input id="f-tags" placeholder="标签（逗号分隔）" style="flex:2"/>
+            </div>
+            <button class="btn btn-primary" onclick="addManual()">✅ 添加到知识库</button>
+        </div>
+
+        <!-- Tab: JSON paste -->
+        <div class="import-content" id="tab-json">
+            <p style="margin-bottom:10px;color:var(--text-light);font-size:0.9em">粘贴 JSON 数组（单条或多条记录），将合并到现有知识库</p>
+            <textarea class="json-textarea" id="jsonInput" placeholder='[
+  {
+    "name": "CN_iData XX 使用说明书",
+    "series": "X系列",
+    "year": "2025",
+    "version": "V1.0",
+    "format": "pdf",
+    "filename": "CN_iData XX 使用说明书_2025V1.0.pdf",
+    "path": "使用说明书/CN_iData XX 使用说明书_2025V1.0.pdf",
+    "tags": ["X系列","说明书"]
+  }
+]'></textarea>
+            <button class="btn btn-primary" onclick="importJSON()">✅ 导入</button>
+        </div>
+
+        <!-- Tab: file upload -->
+        <div class="import-content" id="tab-file">
+            <p style="margin-bottom:10px;color:var(--text-light);font-size:0.9em">上传 knowledge_base_catalog.json 文件，将完全替换或合并</p>
+            <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                📂 点击选择或拖入 JSON 文件
+            </div>
+            <input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleFileImport(event)">
+            <div style="display:flex;gap:10px">
+                <button class="btn btn-primary" style="flex:1" onclick="document.getElementById('mergeReplace').value='merge';document.getElementById('fileInput').click()">🔀 合并导入</button>
+                <button class="btn btn-outline" style="flex:1" onclick="document.getElementById('mergeReplace').value='replace';document.getElementById('fileInput').click()">🔄 替换全部</button>
+            </div>
+            <input type="hidden" id="mergeReplace" value="merge">
+        </div>
+    </div>
+
+    <!-- Doc list area -->
+    <div id="docArea"></div>
+</div>
+
+<div class="footer">
+    © 2026 iData 盈达科技 · 售后服务文档中心 · 如需补充文档请联系 aftersales@idataglobal.com
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== STATE ====================
+let DB = [];
+
+// ==================== INIT ====================
+// Try to load from embedded data first, then fetch JSON
+const EMBEDDED_DATA = null; // will be replaced by JSON content if needed
+
+async function init() {
+    try {
+        // Try fetching from same directory
+        const res = await fetch('knowledge_base_catalog.json');
+        if (res.ok) {
+            const data = await res.json();
+            DB = data.documents || data;
+        }
+    } catch(e) {
+        console.log('JSON fetch failed, using embedded:', e);
+    }
+    if (!DB || DB.length === 0) {
+        DB = getDefaultData();
+    }
+    updateSeriesFilter();
+    renderStats();
+    renderDocs();
+}
+
+// ==================== RENDER ====================
+function renderStats() {
+    const series = [...new Set(DB.map(d => d.series))];
+    document.getElementById('statTotal').textContent = `📄 共 ${DB.length} 份文档`;
+    document.getElementById('statSeries').textContent = `📦 ${series.length} 个系列`;
+    const today = new Date().toLocaleDateString('zh-CN', {year:'numeric',month:'2-digit',day:'2-digit'});
+    document.getElementById('statUpdate').textContent = `🕐 更新: ${today}`;
+}
+
+function updateSeriesFilter() {
+    const sel = document.getElementById('seriesFilter');
+    const current = sel.value;
+    const series = [...new Set(DB.map(d => d.series))].sort();
+    sel.innerHTML = '<option value="">全部系列</option>';
+    series.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        if (s === current) opt.selected = true;
+        sel.appendChild(opt);
+    });
+    // Also fill series select in import
+    const fSeries = document.getElementById('f-series');
+    fSeries.innerHTML = '<option value="">选择系列</option>';
+    series.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        fSeries.appendChild(opt);
+    });
+    const newOpt = document.createElement('option');
+    newOpt.value = '__new__';
+    newOpt.textContent = '＋ 新系列';
+    fSeries.appendChild(newOpt);
+}
+
+function renderDocs() {
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    const sf = document.getElementById('seriesFilter').value;
+    const ff = document.getElementById('formatFilter').value;
+
+    let filtered = DB.filter(d => {
+        const matchQ = !q || [d.name, d.filename, d.series, ...(d.tags||[])].join(' ').toLowerCase().includes(q);
+        const matchS = !sf || d.series === sf;
+        const matchF = !ff || d.format === ff;
+        return matchQ && matchS && matchF;
+    });
+
+    const area = document.getElementById('docArea');
+    if (filtered.length === 0) {
+        area.innerHTML = '<div class="no-result">🔍 没有找到匹配文档</div>';
+        return;
+    }
+
+    // Group by series
+    const groups = {};
+    filtered.forEach(d => {
+        if (!groups[d.series]) groups[d.series] = [];
+        groups[d.series].push(d);
+    });
+
+    let html = '';
+    const seriesOrder = ['K系列','T系列','95系列','i3系列','P系列','J系列'];
+    const orderedKeys = [...new Set([...seriesOrder, ...Object.keys(groups)])].filter(k => groups[k]);
+
+    orderedKeys.forEach(series => {
+        const docs = groups[series];
+        html += `
+        <div class="category" data-series="${series}">
+            <div class="category-header">
+                <div class="category-title">
+                    <span>📱</span> ${series}
+                    <span class="category-count">${docs.length} 份</span>
+                </div>
+            </div>
+            <div class="doc-grid">
+                ${docs.map(d => renderCard(d)).join('')}
+            </div>
+        </div>`;
+    });
+    area.innerHTML = html;
+}
+
+function renderCard(d) {
+    const iconMap = { pdf: '🔴', docx: '🔵', doc: '🟢' };
+    const iconClass = { pdf: 'icon-pdf', docx: 'icon-docx', doc: 'icon-doc' };
+    return `
+    <div class="doc-card" data-id="${d.id||''}">
+        <div class="doc-card-top">
+            <div class="doc-icon ${iconClass[d.format]||'icon-pdf'}">${iconMap[d.format]||'📄'}</div>
+            <div class="doc-info">
+                <div class="doc-name">${d.name}</div>
+                <div class="doc-meta">
+                    <span class="badge badge-${d.format}">${d.format.toUpperCase()}</span>
+                    <span class="doc-version">${d.version||''}</span>
+                    <span class="doc-year">${d.year||''}年</span>
+                </div>
+            </div>
+        </div>
+        <div class="doc-filename">${d.filename}</div>
+        <div class="doc-actions">
+            <a href="${d.path}" download="${d.filename}">
+                <button class="download-btn">⬇️ 点击下载</button>
+            </a>
+        </div>
+    </div>`;
+}
+
+// ==================== IMPORT ====================
+function toggleImport() {
+    const panel = document.getElementById('importPanel');
+    panel.classList.toggle('visible');
+}
+
+function switchTab(el, tabId) {
+    document.querySelectorAll('.import-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.import-content').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+}
+
+function addManual() {
+    const name = document.getElementById('f-name').value.trim();
+    if (!name) { showToast('⚠️ 请填写文档名称', '#f44336'); return; }
+    let series = document.getElementById('f-series').value;
+    if (series === '__new__') {
+        series = prompt('请输入新系列名称：');
+        if (!series) return;
+    }
+    const format = document.getElementById('f-format').value;
+    const filename = document.getElementById('f-filename').value.trim() || `${name}.${format}`;
+    const version = document.getElementById('f-version').value.trim() || 'V1.0';
+    const year = document.getElementById('f-year').value.trim() || new Date().getFullYear().toString();
+    const path = document.getElementById('f-path').value.trim() || `使用说明书/${filename}`;
+    const tagsStr = document.getElementById('f-tags').value.trim();
+    const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(Boolean) : [series];
+
+    const newDoc = {
+        id: `${series.replace(/[^a-zA-Z0-9]/g,'')}-${Date.now()}`,
+        series: series || '其他',
+        name, year, version, format, filename, path, tags
+    };
+    DB.push(newDoc);
+    updateSeriesFilter();
+    renderStats();
+    renderDocs();
+    showToast('✅ 已添加: ' + name);
+    // Clear
+    ['f-name','f-filename','f-version','f-year','f-path','f-tags'].forEach(id => document.getElementById(id).value = '');
+}
+
+function importJSON() {
+    try {
+        const raw = document.getElementById('jsonInput').value.trim();
+        const items = JSON.parse(raw);
+        const arr = Array.isArray(items) ? items : [items];
+        let added = 0, updated = 0;
+        arr.forEach(item => {
+            const existing = DB.findIndex(d => d.filename === item.filename || d.id === item.id);
+            if (existing >= 0) {
+                DB[existing] = { ...DB[existing], ...item };
+                updated++;
+            } else {
+                if (!item.id) item.id = `import-${Date.now()}-${Math.random().toString(36).substr(2,5)}`;
+                DB.push(item);
+                added++;
+            }
+        });
+        updateSeriesFilter();
+        renderStats();
+        renderDocs();
+        showToast(`✅ 导入完成: 新增 ${added}，更新 ${updated}`);
+        document.getElementById('jsonInput').value = '';
+    } catch(e) {
+        showToast('❌ JSON 格式错误: ' + e.message, '#f44336');
+    }
+}
+
+function handleFileImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const mode = document.getElementById('mergeReplace').value;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        try {
+            const data = JSON.parse(ev.target.result);
+            const incoming = data.documents || data;
+            if (!Array.isArray(incoming)) throw new Error('格式错误：期望数组或含 documents 字段的对象');
+            if (mode === 'replace') {
+                DB = incoming;
+                showToast(`✅ 已替换全部: ${DB.length} 条`);
+            } else {
+                let added = 0, updated = 0;
+                incoming.forEach(item => {
+                    const idx = DB.findIndex(d => d.filename === item.filename || d.id === item.id);
+                    if (idx >= 0) { DB[idx] = { ...DB[idx], ...item }; updated++; }
+                    else { DB.push(item); added++; }
+                });
+                showToast(`✅ 合并完成: 新增 ${added}，更新 ${updated}`);
+            }
+            updateSeriesFilter();
+            renderStats();
+            renderDocs();
+        } catch(err) {
+            showToast('❌ 文件解析失败: ' + err.message, '#f44336');
+        }
+    };
+    reader.readAsText(file, 'utf-8');
+    e.target.value = '';
+}
+
+// Drag and drop
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+        const mode = document.getElementById('mergeReplace').value || 'merge';
+        const fakeEvent = { target: { files: [file], value: '' } };
+        handleFileImport(fakeEvent);
+    }
+});
+
+// ==================== EXPORT ====================
+function exportJSON() {
+    const data = {
+        version: "1.0",
+        lastUpdated: new Date().toISOString().split('T')[0],
+        description: "iData 产品文档知识库清单",
+        documents: DB
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `knowledge_base_catalog_${data.lastUpdated}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('✅ 已导出 knowledge_base_catalog_' + data.lastUpdated + '.json');
+}
+
+// ==================== DOWNLOAD ALL ====================
+function downloadAll() {
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    const sf = document.getElementById('seriesFilter').value;
+    const ff = document.getElementById('formatFilter').value;
+    const filtered = DB.filter(d => {
+        const matchQ = !q || [d.name, d.filename, d.series, ...(d.tags||[])].join(' ').toLowerCase().includes(q);
+        const matchS = !sf || d.series === sf;
+        const matchF = !ff || d.format === ff;
+        return matchQ && matchS && matchF;
+    });
+    if (filtered.length > 10) {
+        if (!confirm(`即将触发下载 ${filtered.length} 个文件，浏览器可能会拦截多文件下载，确认继续？`)) return;
+    }
+    filtered.forEach((d, i) => {
+        setTimeout(() => {
+            const a = document.createElement('a');
+            a.href = d.path;
+            a.download = d.filename;
+            a.click();
+        }, i * 600);
+    });
+    showToast(`⬇️ 正在下载 ${filtered.length} 个文件...`);
+}
+
+// ==================== TOAST ====================
+let toastTimer;
+function showToast(msg, bg = '#333') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = bg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ==================== DEFAULT DATA ====================
+function getDefaultData() {
+    return [
+{"id":"K1-001","series":"K系列","name":"CN_iData K1快速指南","year":"2020","version":"V1.1","format":"pdf","filename":"CN_iData K1快速指南_2020V1.1.pdf","path":"使用说明书/CN_iData K1快速指南_2020V1.1.pdf","tags":["K系列","快速指南"]},
+{"id":"K3-001","series":"K系列","name":"CN_iData K3（K3系列通用）快速指南","year":"2021","version":"V1.0","format":"pdf","filename":"CN_iData K3（K3系列通用）快速指南_2021V1.0.pdf","path":"使用说明书/CN_iData K3（K3系列通用）快速指南_2021V1.0.pdf","tags":["K系列","快速指南"]},
+{"id":"K3-002","series":"K系列","name":"CN_iData K3Turbo 使用说明书","year":"2025","version":"V1.0","format":"pdf","filename":"CN_iData K3Turbo 使用说明书_2025V1.0.pdf","path":"使用说明书/CN_iData K3Turbo 使用说明书_2025V1.0.pdf","tags":["K系列","K3Turbo"]},
+{"id":"K8-001","series":"K系列","name":"CN_iData K8快速指南","year":"2021","version":"V1.0","format":"pdf","filename":"CN_iData K8快速指南_2021V1.0.pdf","path":"使用说明书/CN_iData K8快速指南_2021V1.0.pdf","tags":["K系列","快速指南"]},
+{"id":"T1Pro-001","series":"T系列","name":"CN_iData T1 Pro 使用说明书","year":"2025","version":"V1.0","format":"docx","filename":"CN_iData T1 Pro 使用说明书_2025V1.0.docx","path":"使用说明书/CN_iData T1 Pro 使用说明书_2025V1.0.docx","tags":["T系列","T1 Pro"]},
+{"id":"T1S-001","series":"T系列","name":"CN_iData T1S 使用说明书","year":"2025","version":"V1.0","format":"docx","filename":"CN_iData T1S 使用说明书_2025V1.0.docx","path":"使用说明书/CN_iData T1S 使用说明书_2025V1.0.docx","tags":["T系列","T1S"]},
+{"id":"T3Pro-001","series":"T系列","name":"CN_iData T3 Pro 使用说明书","year":"2025","version":"V1.0","format":"docx","filename":"CN_iData T3 Pro 使用说明书_2025V1.0.docx","path":"使用说明书/CN_iData T3 Pro 使用说明书_2025V1.0.docx","tags":["T系列","T3 Pro"]},
+{"id":"T5-001","series":"T系列","name":"CN_iData T5 使用说明书","year":"2025","version":"V1.0","format":"doc","filename":"CN_iData T5 使用说明书_2025V1.0.doc","path":"使用说明书/CN_iData T5 使用说明书_2025V1.0.doc","tags":["T系列","T5"]},
+{"id":"95-001","series":"95系列","name":"CN_iData 95使用说明书","year":"2020","version":"V1.1","format":"pdf","filename":"CN_iData 95使用说明书_2020V1.1.pdf","path":"使用说明书/CN_iData 95使用说明书_2020V1.1.pdf","tags":["95系列"]},
+{"id":"95-002","series":"95系列","name":"CN_iData 95快速指南","year":"2020","version":"V1.1","format":"pdf","filename":"CN_iData 95快速指南_2020V1.1.pdf","path":"使用说明书/CN_iData 95快速指南_2020V1.1.pdf","tags":["95系列","快速指南"]},
+{"id":"95WPro-001","series":"95系列","name":"CN_iData 新95W Pro 快速指南","year":"2024","version":"V1.0","format":"pdf","filename":"CN_iData 新95W Pro 快速指南_2024V1.0.pdf","path":"使用说明书/CN_iData 新95W Pro 快速指南_2024V1.0.pdf","tags":["95系列","95W Pro"]},
+{"id":"i3Pro-001","series":"i3系列","name":"CN_iData i3 Pro 使用说明书","year":"2025","version":"V1.0","format":"docx","filename":"CN_iData i3 Pro 使用说明书_2025V1.0.docx","path":"使用说明书/CN_iData i3 Pro 使用说明书_2025V1.0.docx","tags":["i3系列","i3 Pro"]},
+{"id":"P1-001","series":"P系列","name":"CN_iData P1使用说明书","year":"2022","version":"V1.0","format":"doc","filename":"CN_iData P1使用说明书_2022V1.0.doc","path":"使用说明书/CN_iData P1使用说明书_2022V1.0.doc","tags":["P系列","P1"]},
+{"id":"J17-001","series":"J系列","name":"CN_J17无线用户设置手册","year":"2024","version":"V1.0","format":"pdf","filename":"CN_J17无线用户设置手册_2024V1.0.pdf","path":"使用说明书/CN_J17无线用户设置手册_2024V1.0.pdf","tags":["J系列","J17","无线"]},
+{"id":"J17-002","series":"J系列","name":"CN_J17有线用户设置手册","year":"2024","version":"V1.0","format":"pdf","filename":"CN_J17有线用户设置手册_2024V1.0.pdf","path":"使用说明书/CN_J17有线用户设置手册_2024V1.0.pdf","tags":["J系列","J17","有线"]},
+{"id":"J7-001","series":"J系列","name":"CN_iData J7-BT用户设置手册","year":"2024","version":"V1.0","format":"pdf","filename":"CN_iData J7-BT用户设置手册_2024V1.0.pdf","path":"使用说明书/CN_iData J7-BT用户设置手册_2024V1.0.pdf","tags":["J系列","J7","蓝牙"]},
+{"id":"J7-002","series":"J系列","name":"CN_iData J7有线用户设置手册","year":"2024","version":"V1.0","format":"pdf","filename":"CN_iData J7有线用户设置手册_2024V1.0.pdf","path":"使用说明书/CN_iData J7有线用户设置手册_2024V1.0.pdf","tags":["J系列","J7","有线"]},
+{"id":"J15-001","series":"J系列","name":"CN_iData J15-BT用户设置手册","year":"2024","version":"V1.8","format":"pdf","filename":"CN_iData J15-BT用户设置手册_2024V1.8.pdf","path":"使用说明书/CN_iData J15-BT用户设置手册_2024V1.8.pdf","tags":["J系列","J15","蓝牙"]},
+{"id":"J15-002","series":"J系列","name":"CN_iData J15有线用户设置手册","year":"2024","version":"V1.2","format":"pdf","filename":"CN_iData J15有线用户设置手册_2024V1.2.pdf","path":"使用说明书/CN_iData J15有线用户设置手册_2024V1.2.pdf","tags":["J系列","J15","有线"]},
+{"id":"J16-001","series":"J系列","name":"CN_iData J16-BT用户设置手册","year":"2024","version":"V1.1","format":"pdf","filename":"CN_iData J16-BT用户设置手册_2024V1.1.pdf","path":"使用说明书/CN_iData J16-BT用户设置手册_2024V1.1.pdf","tags":["J系列","J16","蓝牙"]},
+{"id":"J16-002","series":"J系列","name":"CN_iData J16有线用户设置手册","year":"2024","version":"V2.3","format":"pdf","filename":"CN_iData J16有线用户设置手册_2024V2.3.pdf","path":"使用说明书/CN_iData J16有线用户设置手册_2024V2.3.pdf","tags":["J系列","J16","有线"]}
+    ];
+}
+
+init();
+</script>
+</body>
+</html>
