@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>iData 产品文档知识库</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -411,7 +412,7 @@
             <option value="doc">DOC</option>
         </select>
         <button class="btn btn-outline" onclick="toggleImport()">➕ 导入更新</button>
-        <button class="btn btn-success" onclick="exportJSON()">💾 导出清单</button>
+        <button class="btn btn-success" onclick="exportExcel()">📊 导出Excel</button>
         <button class="btn btn-primary" onclick="downloadAll()">⬇️ 下载全部</button>
     </div>
 </div>
@@ -922,22 +923,64 @@ dropZone.addEventListener('drop', e => {
     }
 });
 
-// ==================== EXPORT ====================
-function exportJSON() {
-    const data = {
-        version: "1.0",
-        lastUpdated: new Date().toISOString().split('T')[0],
-        description: "iData 产品文档知识库清单",
-        documents: DB
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `knowledge_base_catalog_${data.lastUpdated}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('✅ 已导出 knowledge_base_catalog_' + data.lastUpdated + '.json');
+// ==================== EXPORT EXCEL ====================
+function exportExcel() {
+    const baseUrl = 'https://idataaftersales.github.io/idata-docs/';
+
+    // Build worksheet data
+    const wsData = [
+        ['iData 产品文档知识库清单'],
+        ['导出时间', new Date().toLocaleString('zh-CN')],
+        [],
+        ['系列', '文档名称', '文档类型', '格式', '版本', '年份', '文件名', '下载链接']
+    ];
+
+    DB.forEach(d => {
+        // Detect doc type from name
+        let docType = '其他';
+        if (/使用说明书|用户手册|说明书/.test(d.name)) docType = '使用说明书';
+        else if (/快速指南|快速使用/.test(d.name)) docType = '快速指南';
+        else if (/设置手册|配置手册/.test(d.name)) docType = '设置手册';
+        else if (/维修|维修手册/.test(d.name)) docType = '维修手册';
+
+        const downloadUrl = baseUrl + encodeURIComponent(d.filename);
+        wsData.push([
+            d.series,
+            d.name,
+            docType,
+            d.format.toUpperCase(),
+            d.version || '',
+            d.year || '',
+            d.filename,
+            { v: downloadUrl, l: { Target: downloadUrl, Tooltip: '点击下载' } }
+        ]);
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Column widths
+    ws['!cols'] = [
+        { wch: 10 },  // 系列
+        { wch: 40 },  // 文档名称
+        { wch: 12 },  // 文档类型
+        { wch: 8 },   // 格式
+        { wch: 10 },  // 版本
+        { wch: 8 },   // 年份
+        { wch: 45 },  // 文件名
+        { wch: 80 }   // 下载链接
+    ];
+
+    // Merge title cells
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } }
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, '文档清单');
+    const today = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `iData文档清单_${today}.xlsx`);
+    showToast('✅ 已导出 Excel：iData文档清单_' + today + '.xlsx');
 }
 
 // ==================== DOWNLOAD SINGLE DOC ====================
