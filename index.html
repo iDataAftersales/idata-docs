@@ -641,9 +641,7 @@ function renderCard(d) {
         </div>
         <div class="doc-filename">${d.filename}</div>
         <div class="doc-actions">
-            <a href="${d.path}" download="${d.filename}">
-                <button class="download-btn">⬇️ 点击下载</button>
-            </a>
+            <button class="download-btn" onclick="downloadDoc('${d.path}', '${d.filename}')">⬇️ 点击下载</button>
         </div>
     </div>`;
 }
@@ -940,6 +938,17 @@ function exportJSON() {
     a.click();
     URL.revokeObjectURL(url);
     showToast('✅ 已导出 knowledge_base_catalog_' + data.lastUpdated + '.json');
+}
+
+// ==================== DOWNLOAD SINGLE DOC ====================
+function downloadDoc(path, filename) {
+    const a = document.createElement('a');
+    a.href = path;
+    a.download = filename;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
 // ==================== DOWNLOAD ALL ====================
