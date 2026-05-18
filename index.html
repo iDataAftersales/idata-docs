@@ -447,7 +447,7 @@
                 <input id="f-year" placeholder="年份（如: 2025）" />
             </div>
             <div class="import-row">
-                <input id="f-path" placeholder="路径（如: 使用说明书/CN_iData XX_2025V1.0.pdf）" style="flex:3" />
+                <input id="f-path" placeholder="路径（如: CN_iData XX_2025V1.0.pdf）" style="flex:3" />
                 <input id="f-tags" placeholder="标签（逗号分隔）" style="flex:2"/>
             </div>
             <button class="btn btn-primary" onclick="addManual()">✅ 添加到知识库</button>
@@ -481,7 +481,7 @@
     "version": "V1.0",
     "format": "pdf",
     "filename": "CN_iData XX 使用说明书_2025V1.0.pdf",
-    "path": "使用说明书/CN_iData XX 使用说明书_2025V1.0.pdf",
+    "path": "CN_iData XX 使用说明书_2025V1.0.pdf",
     "tags": ["X系列","说明书"]
   }
 ]'></textarea>
@@ -673,7 +673,7 @@ function addManual() {
     const filename = document.getElementById('f-filename').value.trim() || `${name}.${format}`;
     const version = document.getElementById('f-version').value.trim() || 'V1.0';
     const year = document.getElementById('f-year').value.trim() || new Date().getFullYear().toString();
-    const path = document.getElementById('f-path').value.trim() || `使用说明书/${filename}`;
+    const path = document.getElementById('f-path').value.trim() || filename;  // 修复：直接使用文件名作为路径
     const tagsStr = document.getElementById('f-tags').value.trim();
     const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(Boolean) : [series];
 
@@ -767,7 +767,7 @@ function handleDocUpload(e) {
         const parsed = parseFilename(file.name);
         parsed.filename = file.name;
         parsed.format = ext;
-        parsed.path = '使用说明书/' + file.name;
+        parsed.path = file.name;  // 修复：index.html 已在使用说明书目录下，路径直接是文件名
         pendingUploadDocs.push(parsed);
         added++;
     }
@@ -981,27 +981,27 @@ function showToast(msg, bg = '#333') {
 // ==================== DEFAULT DATA ====================
 function getDefaultData() {
     return [
-{"id":"K1-001","series":"K系列","name":"CN_iData K1快速指南","year":"2020","version":"V1.1","format":"pdf","filename":"CN_iData K1快速指南_2020V1.1.pdf","path":"使用说明书/CN_iData K1快速指南_2020V1.1.pdf","tags":["K系列","快速指南"]},
-{"id":"K3-001","series":"K系列","name":"CN_iData K3（K3系列通用）快速指南","year":"2021","version":"V1.0","format":"pdf","filename":"CN_iData K3（K3系列通用）快速指南_2021V1.0.pdf","path":"使用说明书/CN_iData K3（K3系列通用）快速指南_2021V1.0.pdf","tags":["K系列","快速指南"]},
-{"id":"K3-002","series":"K系列","name":"CN_iData K3Turbo 使用说明书","year":"2025","version":"V1.0","format":"pdf","filename":"CN_iData K3Turbo 使用说明书_2025V1.0.pdf","path":"使用说明书/CN_iData K3Turbo 使用说明书_2025V1.0.pdf","tags":["K系列","K3Turbo"]},
-{"id":"K8-001","series":"K系列","name":"CN_iData K8快速指南","year":"2021","version":"V1.0","format":"pdf","filename":"CN_iData K8快速指南_2021V1.0.pdf","path":"使用说明书/CN_iData K8快速指南_2021V1.0.pdf","tags":["K系列","快速指南"]},
-{"id":"T1Pro-001","series":"T系列","name":"CN_iData T1 Pro 使用说明书","year":"2025","version":"V1.0","format":"docx","filename":"CN_iData T1 Pro 使用说明书_2025V1.0.docx","path":"使用说明书/CN_iData T1 Pro 使用说明书_2025V1.0.docx","tags":["T系列","T1 Pro"]},
-{"id":"T1S-001","series":"T系列","name":"CN_iData T1S 使用说明书","year":"2025","version":"V1.0","format":"docx","filename":"CN_iData T1S 使用说明书_2025V1.0.docx","path":"使用说明书/CN_iData T1S 使用说明书_2025V1.0.docx","tags":["T系列","T1S"]},
-{"id":"T3Pro-001","series":"T系列","name":"CN_iData T3 Pro 使用说明书","year":"2025","version":"V1.0","format":"docx","filename":"CN_iData T3 Pro 使用说明书_2025V1.0.docx","path":"使用说明书/CN_iData T3 Pro 使用说明书_2025V1.0.docx","tags":["T系列","T3 Pro"]},
-{"id":"T5-001","series":"T系列","name":"CN_iData T5 使用说明书","year":"2025","version":"V1.0","format":"doc","filename":"CN_iData T5 使用说明书_2025V1.0.doc","path":"使用说明书/CN_iData T5 使用说明书_2025V1.0.doc","tags":["T系列","T5"]},
-{"id":"95-001","series":"95系列","name":"CN_iData 95使用说明书","year":"2020","version":"V1.1","format":"pdf","filename":"CN_iData 95使用说明书_2020V1.1.pdf","path":"使用说明书/CN_iData 95使用说明书_2020V1.1.pdf","tags":["95系列"]},
-{"id":"95-002","series":"95系列","name":"CN_iData 95快速指南","year":"2020","version":"V1.1","format":"pdf","filename":"CN_iData 95快速指南_2020V1.1.pdf","path":"使用说明书/CN_iData 95快速指南_2020V1.1.pdf","tags":["95系列","快速指南"]},
-{"id":"95WPro-001","series":"95系列","name":"CN_iData 新95W Pro 快速指南","year":"2024","version":"V1.0","format":"pdf","filename":"CN_iData 新95W Pro 快速指南_2024V1.0.pdf","path":"使用说明书/CN_iData 新95W Pro 快速指南_2024V1.0.pdf","tags":["95系列","95W Pro"]},
-{"id":"i3Pro-001","series":"i3系列","name":"CN_iData i3 Pro 使用说明书","year":"2025","version":"V1.0","format":"docx","filename":"CN_iData i3 Pro 使用说明书_2025V1.0.docx","path":"使用说明书/CN_iData i3 Pro 使用说明书_2025V1.0.docx","tags":["i3系列","i3 Pro"]},
-{"id":"P1-001","series":"P系列","name":"CN_iData P1使用说明书","year":"2022","version":"V1.0","format":"doc","filename":"CN_iData P1使用说明书_2022V1.0.doc","path":"使用说明书/CN_iData P1使用说明书_2022V1.0.doc","tags":["P系列","P1"]},
-{"id":"J17-001","series":"J系列","name":"CN_J17无线用户设置手册","year":"2024","version":"V1.0","format":"pdf","filename":"CN_J17无线用户设置手册_2024V1.0.pdf","path":"使用说明书/CN_J17无线用户设置手册_2024V1.0.pdf","tags":["J系列","J17","无线"]},
-{"id":"J17-002","series":"J系列","name":"CN_J17有线用户设置手册","year":"2024","version":"V1.0","format":"pdf","filename":"CN_J17有线用户设置手册_2024V1.0.pdf","path":"使用说明书/CN_J17有线用户设置手册_2024V1.0.pdf","tags":["J系列","J17","有线"]},
-{"id":"J7-001","series":"J系列","name":"CN_iData J7-BT用户设置手册","year":"2024","version":"V1.0","format":"pdf","filename":"CN_iData J7-BT用户设置手册_2024V1.0.pdf","path":"使用说明书/CN_iData J7-BT用户设置手册_2024V1.0.pdf","tags":["J系列","J7","蓝牙"]},
-{"id":"J7-002","series":"J系列","name":"CN_iData J7有线用户设置手册","year":"2024","version":"V1.0","format":"pdf","filename":"CN_iData J7有线用户设置手册_2024V1.0.pdf","path":"使用说明书/CN_iData J7有线用户设置手册_2024V1.0.pdf","tags":["J系列","J7","有线"]},
-{"id":"J15-001","series":"J系列","name":"CN_iData J15-BT用户设置手册","year":"2024","version":"V1.8","format":"pdf","filename":"CN_iData J15-BT用户设置手册_2024V1.8.pdf","path":"使用说明书/CN_iData J15-BT用户设置手册_2024V1.8.pdf","tags":["J系列","J15","蓝牙"]},
-{"id":"J15-002","series":"J系列","name":"CN_iData J15有线用户设置手册","year":"2024","version":"V1.2","format":"pdf","filename":"CN_iData J15有线用户设置手册_2024V1.2.pdf","path":"使用说明书/CN_iData J15有线用户设置手册_2024V1.2.pdf","tags":["J系列","J15","有线"]},
-{"id":"J16-001","series":"J系列","name":"CN_iData J16-BT用户设置手册","year":"2024","version":"V1.1","format":"pdf","filename":"CN_iData J16-BT用户设置手册_2024V1.1.pdf","path":"使用说明书/CN_iData J16-BT用户设置手册_2024V1.1.pdf","tags":["J系列","J16","蓝牙"]},
-{"id":"J16-002","series":"J系列","name":"CN_iData J16有线用户设置手册","year":"2024","version":"V2.3","format":"pdf","filename":"CN_iData J16有线用户设置手册_2024V2.3.pdf","path":"使用说明书/CN_iData J16有线用户设置手册_2024V2.3.pdf","tags":["J系列","J16","有线"]}
+{"id":"K1-001","series":"K系列","name":"CN_iData K1快速指南","year":"2020","version":"V1.1","format":"pdf","filename":"CN_iData K1快速指南_2020V1.1.pdf","path":"CN_iData K1快速指南_2020V1.1.pdf","tags":["K系列","快速指南"]},
+{"id":"K3-001","series":"K系列","name":"CN_iData K3（K3系列通用）快速指南","year":"2021","version":"V1.0","format":"pdf","filename":"CN_iData K3（K3系列通用）快速指南_2021V1.0.pdf","path":"CN_iData K3（K3系列通用）快速指南_2021V1.0.pdf","tags":["K系列","快速指南"]},
+{"id":"K3-002","series":"K系列","name":"CN_iData K3Turbo 使用说明书","year":"2025","version":"V1.0","format":"pdf","filename":"CN_iData K3Turbo 使用说明书_2025V1.0.pdf","path":"CN_iData K3Turbo 使用说明书_2025V1.0.pdf","tags":["K系列","K3Turbo"]},
+{"id":"K8-001","series":"K系列","name":"CN_iData K8快速指南","year":"2021","version":"V1.0","format":"pdf","filename":"CN_iData K8快速指南_2021V1.0.pdf","path":"CN_iData K8快速指南_2021V1.0.pdf","tags":["K系列","快速指南"]},
+{"id":"T1Pro-001","series":"T系列","name":"CN_iData T1 Pro 使用说明书","year":"2025","version":"V1.0","format":"docx","filename":"CN_iData T1 Pro 使用说明书_2025V1.0.docx","path":"CN_iData T1 Pro 使用说明书_2025V1.0.docx","tags":["T系列","T1 Pro"]},
+{"id":"T1S-001","series":"T系列","name":"CN_iData T1S 使用说明书","year":"2025","version":"V1.0","format":"docx","filename":"CN_iData T1S 使用说明书_2025V1.0.docx","path":"CN_iData T1S 使用说明书_2025V1.0.docx","tags":["T系列","T1S"]},
+{"id":"T3Pro-001","series":"T系列","name":"CN_iData T3 Pro 使用说明书","year":"2025","version":"V1.0","format":"docx","filename":"CN_iData T3 Pro 使用说明书_2025V1.0.docx","path":"CN_iData T3 Pro 使用说明书_2025V1.0.docx","tags":["T系列","T3 Pro"]},
+{"id":"T5-001","series":"T系列","name":"CN_iData T5 使用说明书","year":"2025","version":"V1.0","format":"doc","filename":"CN_iData T5 使用说明书_2025V1.0.doc","path":"CN_iData T5 使用说明书_2025V1.0.doc","tags":["T系列","T5"]},
+{"id":"95-001","series":"95系列","name":"CN_iData 95使用说明书","year":"2020","version":"V1.1","format":"pdf","filename":"CN_iData 95使用说明书_2020V1.1.pdf","path":"CN_iData 95使用说明书_2020V1.1.pdf","tags":["95系列"]},
+{"id":"95-002","series":"95系列","name":"CN_iData 95快速指南","year":"2020","version":"V1.1","format":"pdf","filename":"CN_iData 95快速指南_2020V1.1.pdf","path":"CN_iData 95快速指南_2020V1.1.pdf","tags":["95系列","快速指南"]},
+{"id":"95WPro-001","series":"95系列","name":"CN_iData 新95W Pro 快速指南","year":"2024","version":"V1.0","format":"pdf","filename":"CN_iData 新95W Pro 快速指南_2024V1.0.pdf","path":"CN_iData 新95W Pro 快速指南_2024V1.0.pdf","tags":["95系列","95W Pro"]},
+{"id":"i3Pro-001","series":"i3系列","name":"CN_iData i3 Pro 使用说明书","year":"2025","version":"V1.0","format":"docx","filename":"CN_iData i3 Pro 使用说明书_2025V1.0.docx","path":"CN_iData i3 Pro 使用说明书_2025V1.0.docx","tags":["i3系列","i3 Pro"]},
+{"id":"P1-001","series":"P系列","name":"CN_iData P1使用说明书","year":"2022","version":"V1.0","format":"doc","filename":"CN_iData P1使用说明书_2022V1.0.doc","path":"CN_iData P1使用说明书_2022V1.0.doc","tags":["P系列","P1"]},
+{"id":"J17-001","series":"J系列","name":"CN_J17无线用户设置手册","year":"2024","version":"V1.0","format":"pdf","filename":"CN_J17无线用户设置手册_2024V1.0.pdf","path":"CN_J17无线用户设置手册_2024V1.0.pdf","tags":["J系列","J17","无线"]},
+{"id":"J17-002","series":"J系列","name":"CN_J17有线用户设置手册","year":"2024","version":"V1.0","format":"pdf","filename":"CN_J17有线用户设置手册_2024V1.0.pdf","path":"CN_J17有线用户设置手册_2024V1.0.pdf","tags":["J系列","J17","有线"]},
+{"id":"J7-001","series":"J系列","name":"CN_iData J7-BT用户设置手册","year":"2024","version":"V1.0","format":"pdf","filename":"CN_iData J7-BT用户设置手册_2024V1.0.pdf","path":"CN_iData J7-BT用户设置手册_2024V1.0.pdf","tags":["J系列","J7","蓝牙"]},
+{"id":"J7-002","series":"J系列","name":"CN_iData J7有线用户设置手册","year":"2024","version":"V1.0","format":"pdf","filename":"CN_iData J7有线用户设置手册_2024V1.0.pdf","path":"CN_iData J7有线用户设置手册_2024V1.0.pdf","tags":["J系列","J7","有线"]},
+{"id":"J15-001","series":"J系列","name":"CN_iData J15-BT用户设置手册","year":"2024","version":"V1.8","format":"pdf","filename":"CN_iData J15-BT用户设置手册_2024V1.8.pdf","path":"CN_iData J15-BT用户设置手册_2024V1.8.pdf","tags":["J系列","J15","蓝牙"]},
+{"id":"J15-002","series":"J系列","name":"CN_iData J15有线用户设置手册","year":"2024","version":"V1.2","format":"pdf","filename":"CN_iData J15有线用户设置手册_2024V1.2.pdf","path":"CN_iData J15有线用户设置手册_2024V1.2.pdf","tags":["J系列","J15","有线"]},
+{"id":"J16-001","series":"J系列","name":"CN_iData J16-BT用户设置手册","year":"2024","version":"V1.1","format":"pdf","filename":"CN_iData J16-BT用户设置手册_2024V1.1.pdf","path":"CN_iData J16-BT用户设置手册_2024V1.1.pdf","tags":["J系列","J16","蓝牙"]},
+{"id":"J16-002","series":"J系列","name":"CN_iData J16有线用户设置手册","year":"2024","version":"V2.3","format":"pdf","filename":"CN_iData J16有线用户设置手册_2024V2.3.pdf","path":"CN_iData J16有线用户设置手册_2024V2.3.pdf","tags":["J系列","J16","有线"]}
     ];
 }
 
