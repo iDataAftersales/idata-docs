@@ -350,6 +350,48 @@
             transform: translateY(0);
         }
 
+        /* Download progress bar */
+        .dl-progress {
+            display: none;
+            position: fixed;
+            bottom: 80px;
+            right: 30px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px 20px;
+            width: 320px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            z-index: 998;
+        }
+        .dl-progress.show { display: block; }
+        .dl-progress-title {
+            font-size: 0.88em;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+        .dl-progress-bar {
+            height: 8px;
+            background: var(--gray);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+        .dl-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #7c4dff);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .dl-progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78em;
+            color: var(--text-light);
+        }
+
         /* No result */
         .no-result {
             text-align: center;
@@ -513,6 +555,17 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div class="dl-progress" id="dlProgress">
+    <div class="dl-progress-title" id="dlProgressTitle">⬇️ 正在下载...</div>
+    <div class="dl-progress-bar">
+        <div class="dl-progress-fill" id="dlProgressFill"></div>
+    </div>
+    <div class="dl-progress-info">
+        <span id="dlProgressPct">0%</span>
+        <span id="dlProgressSize">--</span>
+    </div>
+</div>
 
 <script>
 // ==================== STATE ====================
@@ -987,14 +1040,47 @@ function exportExcel() {
 async function downloadDoc(filename) {
     const baseUrl = 'https://idataaftersales.github.io/idata-docs/';
     const url = baseUrl + encodeURIComponent(filename);
-    showToast('⏳ 正在准备下载...');
+
+    // Show progress bar
+    const progBar = document.getElementById('dlProgress');
+    const progFill = document.getElementById('dlProgressFill');
+    const progPct = document.getElementById('dlProgressPct');
+    const progSize = document.getElementById('dlProgressSize');
+    const progTitle = document.getElementById('dlProgressTitle');
+    progTitle.textContent = '⬇️ 正在下载: ' + filename;
+    progFill.style.width = '0%';
+    progPct.textContent = '0%';
+    progSize.textContent = '--';
+    progBar.classList.add('show');
+
     try {
-        const res = await fetch(url, { mode: 'cors' });
+        const res = await fetch(url);
         if (!res.ok) throw new Error('文件获取失败');
-        const blob = await res.blob();
-        // 关键修复：将 MIME 类型改为 application/octet-stream，强制浏览器下载而非打开
-        const forceDownloadBlob = new Blob([blob], { type: 'application/octet-stream' });
-        const blobUrl = URL.createObjectURL(forceDownloadBlob);
+        const contentLength = res.headers.get('content-length');
+        const total = contentLength ? parseInt(contentLength, 10) : 0;
+        if (total > 0) progSize.textContent = '0 / ' + formatSize(total);
+
+        const reader = res.body.getReader();
+        const chunks = [];
+        let received = 0;
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            received += value.length;
+            if (total > 0) {
+                const pct = Math.round(received / total * 100);
+                progFill.style.width = pct + '%';
+                progPct.textContent = pct + '%';
+                progSize.textContent = formatSize(received) + ' / ' + formatSize(total);
+            } else {
+                progPct.textContent = formatSize(received);
+            }
+        }
+
+        const blob = new Blob(chunks, { type: 'application/octet-stream' });
+        const blobUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = blobUrl;
         a.download = filename;
@@ -1005,11 +1091,19 @@ async function downloadDoc(filename) {
             if (a.parentNode) document.body.removeChild(a);
             URL.revokeObjectURL(blobUrl);
         }, 500);
-        showToast('⬇️ 正在下载: ' + filename);
+        showToast('✅ 下载完成: ' + filename);
     } catch(e) {
-        showToast('⚠️ 下载失败，尝试直接打开: ' + filename, '#ff9800');
+        showToast('⚠️ 下载失败，尝试直接打开', '#ff9800');
         window.open(url, '_blank');
+    } finally {
+        setTimeout(() => progBar.classList.remove('show'), 800);
     }
+}
+
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
 }
 
 // ==================== DOWNLOAD ALL ====================
@@ -1027,16 +1121,49 @@ async function downloadAll() {
     if (filtered.length > 5) {
         if (!confirm(`即将批量下载 ${filtered.length} 个文件，确认继续？`)) return;
     }
-    showToast(`⏳ 正在准备 ${filtered.length} 个文件...`);
+
+    const progBar = document.getElementById('dlProgress');
+    const progFill = document.getElementById('dlProgressFill');
+    const progPct = document.getElementById('dlProgressPct');
+    const progSize = document.getElementById('dlProgressSize');
+    const progTitle = document.getElementById('dlProgressTitle');
+    progBar.classList.add('show');
+
     const baseUrl = 'https://idataaftersales.github.io/idata-docs/';
     for (let i = 0; i < filtered.length; i++) {
         const d = filtered[i];
+        progTitle.textContent = `⬇️ 第 ${i+1}/${filtered.length} 个: ${d.filename}`;
+        progFill.style.width = '0%';
+        progPct.textContent = '0%';
+        progSize.textContent = '--';
+
         try {
-            const res = await fetch(baseUrl + encodeURIComponent(d.filename), { mode: 'cors' });
+            const res = await fetch(baseUrl + encodeURIComponent(d.filename));
             if (!res.ok) throw new Error('fail');
-            const blob = await res.blob();
-            const forceBlob = new Blob([blob], { type: 'application/octet-stream' });
-            const blobUrl = URL.createObjectURL(forceBlob);
+            const contentLength = res.headers.get('content-length');
+            const total = contentLength ? parseInt(contentLength, 10) : 0;
+            if (total > 0) progSize.textContent = '0 / ' + formatSize(total);
+
+            const reader = res.body.getReader();
+            const chunks = [];
+            let received = 0;
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                received += value.length;
+                if (total > 0) {
+                    const pct = Math.round(received / total * 100);
+                    progFill.style.width = pct + '%';
+                    progPct.textContent = pct + '%';
+                    progSize.textContent = formatSize(received) + ' / ' + formatSize(total);
+                } else {
+                    progPct.textContent = formatSize(received);
+                }
+            }
+
+            const blob = new Blob(chunks, { type: 'application/octet-stream' });
+            const blobUrl = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = blobUrl;
             a.download = d.filename;
@@ -1048,13 +1175,13 @@ async function downloadAll() {
                 URL.revokeObjectURL(blobUrl);
             }, 300);
         } catch(e) {
-            // fallback: open in new tab
             window.open(baseUrl + encodeURIComponent(d.filename), '_blank');
         }
-        // delay between downloads
-        await new Promise(r => setTimeout(r, 800));
+        await new Promise(r => setTimeout(r, 500));
     }
-    showToast(`✅ 批量下载处理完成`);
+
+    progBar.classList.remove('show');
+    showToast(`✅ 批量下载完成，共 ${filtered.length} 个文件`);
 }
 
 // ==================== TOAST ====================
