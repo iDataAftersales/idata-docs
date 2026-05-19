@@ -992,25 +992,28 @@ async function downloadDoc(filename) {
         const res = await fetch(url, { mode: 'cors' });
         if (!res.ok) throw new Error('文件获取失败');
         const blob = await res.blob();
-        const blobUrl = URL.createObjectURL(blob);
+        // 关键修复：将 MIME 类型改为 application/octet-stream，强制浏览器下载而非打开
+        const forceDownloadBlob = new Blob([blob], { type: 'application/octet-stream' });
+        const blobUrl = URL.createObjectURL(forceDownloadBlob);
         const a = document.createElement('a');
         a.href = blobUrl;
         a.download = filename;
+        a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
         setTimeout(() => {
-            document.body.removeChild(a);
+            if (a.parentNode) document.body.removeChild(a);
             URL.revokeObjectURL(blobUrl);
-        }, 1000);
+        }, 500);
         showToast('⬇️ 正在下载: ' + filename);
     } catch(e) {
-        showToast('⚠️ 直接打开: ' + filename, '#ff9800');
+        showToast('⚠️ 下载失败，尝试直接打开: ' + filename, '#ff9800');
         window.open(url, '_blank');
     }
 }
 
 // ==================== DOWNLOAD ALL ====================
-function downloadAll() {
+async function downloadAll() {
     const q = document.getElementById('searchInput').value.toLowerCase().trim();
     const sf = document.getElementById('seriesFilter').value;
     const ff = document.getElementById('formatFilter').value;
@@ -1020,18 +1023,38 @@ function downloadAll() {
         const matchF = !ff || d.format === ff;
         return matchQ && matchS && matchF;
     });
-    if (filtered.length > 10) {
-        if (!confirm(`即将触发下载 ${filtered.length} 个文件，浏览器可能会拦截多文件下载，确认继续？`)) return;
+    if (filtered.length === 0) { showToast('⚠️ 没有可下载的文件'); return; }
+    if (filtered.length > 5) {
+        if (!confirm(`即将批量下载 ${filtered.length} 个文件，确认继续？`)) return;
     }
-    filtered.forEach((d, i) => {
-        setTimeout(() => {
+    showToast(`⏳ 正在准备 ${filtered.length} 个文件...`);
+    const baseUrl = 'https://idataaftersales.github.io/idata-docs/';
+    for (let i = 0; i < filtered.length; i++) {
+        const d = filtered[i];
+        try {
+            const res = await fetch(baseUrl + encodeURIComponent(d.filename), { mode: 'cors' });
+            if (!res.ok) throw new Error('fail');
+            const blob = await res.blob();
+            const forceBlob = new Blob([blob], { type: 'application/octet-stream' });
+            const blobUrl = URL.createObjectURL(forceBlob);
             const a = document.createElement('a');
-            a.href = d.path;
+            a.href = blobUrl;
             a.download = d.filename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
             a.click();
-        }, i * 600);
-    });
-    showToast(`⬇️ 正在下载 ${filtered.length} 个文件...`);
+            setTimeout(() => {
+                if (a.parentNode) document.body.removeChild(a);
+                URL.revokeObjectURL(blobUrl);
+            }, 300);
+        } catch(e) {
+            // fallback: open in new tab
+            window.open(baseUrl + encodeURIComponent(d.filename), '_blank');
+        }
+        // delay between downloads
+        await new Promise(r => setTimeout(r, 800));
+    }
+    showToast(`✅ 批量下载处理完成`);
 }
 
 // ==================== TOAST ====================
