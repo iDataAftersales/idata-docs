@@ -642,7 +642,7 @@ function renderCard(d) {
         </div>
         <div class="doc-filename">${d.filename}</div>
         <div class="doc-actions">
-            <button class="download-btn" onclick="downloadDoc('${d.path}', '${d.filename}')">⬇️ 点击下载</button>
+            <button class="download-btn" onclick="downloadDoc('${d.filename}')">⬇️ 点击下载</button>
         </div>
     </div>`;
 }
@@ -943,7 +943,7 @@ function exportExcel() {
         else if (/设置手册|配置手册/.test(d.name)) docType = '设置手册';
         else if (/维修|维修手册/.test(d.name)) docType = '维修手册';
 
-        const downloadUrl = baseUrl + encodeURIComponent(d.filename);
+        const downloadUrl = window.location.origin + '/download?file=' + encodeURIComponent(d.filename);
         wsData.push([
             d.series,
             d.name,
@@ -984,28 +984,19 @@ function exportExcel() {
 }
 
 // ==================== DOWNLOAD SINGLE DOC ====================
-async function downloadDoc(path, filename) {
-    showToast('⏳ 正在准备下载...');
-    try {
-        const res = await fetch(path, { cache: 'no-cache' });
-        if (!res.ok) throw new Error('文件获取失败: ' + res.status);
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 1000);
-        showToast('✅ 正在下载: ' + filename);
-    } catch(e) {
-        // fallback: open in new tab
-        showToast('⚠️ 直接打开: ' + filename, '#ff9800');
-        window.open(path, '_blank');
-    }
+function downloadDoc(filename) {
+    // Use Cloudflare Function to force download with Content-Disposition header
+    const url = '/download?file=' + encodeURIComponent(filename);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+    }, 1000);
+    showToast('⬇️ 正在下载: ' + filename);
 }
 
 // ==================== DOWNLOAD ALL ====================
