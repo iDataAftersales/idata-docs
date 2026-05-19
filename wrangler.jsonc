@@ -1,14 +1,12 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "idata-docs",
-  "compatibility_date": "2026-05-18",
-  "observability": {
-    "enabled": true
-  },
+  "compatibility_date": "2026-05-19",
+  "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": "."
   },
-  "compatibility_flags": [
-    "nodejs_compat"
-  ]
+  "observability": {
+    "enabled": true
+  }
 }
