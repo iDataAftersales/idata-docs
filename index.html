@@ -943,7 +943,7 @@ function exportExcel() {
         else if (/设置手册|配置手册/.test(d.name)) docType = '设置手册';
         else if (/维修|维修手册/.test(d.name)) docType = '维修手册';
 
-        const downloadUrl = window.location.origin + '/download?file=' + encodeURIComponent(d.filename);
+        const downloadUrl = 'https://idataaftersales.github.io/idata-docs/' + encodeURIComponent(d.filename);
         wsData.push([
             d.series,
             d.name,
@@ -984,19 +984,29 @@ function exportExcel() {
 }
 
 // ==================== DOWNLOAD SINGLE DOC ====================
-function downloadDoc(filename) {
-    // Use Cloudflare Function to force download with Content-Disposition header
-    const url = '/download?file=' + encodeURIComponent(filename);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.target = '_blank';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-        document.body.removeChild(a);
-    }, 1000);
-    showToast('⬇️ 正在下载: ' + filename);
+async function downloadDoc(filename) {
+    const baseUrl = 'https://idataaftersales.github.io/idata-docs/';
+    const url = baseUrl + encodeURIComponent(filename);
+    showToast('⏳ 正在准备下载...');
+    try {
+        const res = await fetch(url, { mode: 'cors' });
+        if (!res.ok) throw new Error('文件获取失败');
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+        }, 1000);
+        showToast('⬇️ 正在下载: ' + filename);
+    } catch(e) {
+        showToast('⚠️ 直接打开: ' + filename, '#ff9800');
+        window.open(url, '_blank');
+    }
 }
 
 // ==================== DOWNLOAD ALL ====================
