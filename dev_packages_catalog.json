@@ -1,0 +1,61 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2026-05-25",
+  "description": "iData 开发包清单",
+  "packages": [
+    {
+      "id": "pkg-001",
+      "category": "UHF",
+      "name": "UHF开发包",
+      "year": "2024",
+      "version": "V2.2",
+      "format": "zip",
+      "filename": "UHF开发包_V2.2.zip",
+      "path": "开发包/UHF开发包_V2.2.zip",
+      "size": "148MB",
+      "description": "UHF开发包",
+      "download_url": "https://idataaftersales.github.io/idata-docs/开发包/UHF开发包_V2.2.zip",
+      "tags": [
+        "UHF",
+        "开发包"
+      ]
+    },
+    {
+      "id": "pkg-002",
+      "category": "iScanPro",
+      "name": "iScanPro_iScanPlus开发包",
+      "year": "2024",
+      "version": "V2.0",
+      "format": "zip",
+      "filename": "iScanPro_iScanPlus开发包【V2.0-20241224】.zip",
+      "path": "开发包/iScanPro_iScanPlus开发包【V2.0-20241224】.zip",
+      "size": "96MB",
+      "description": "iScanPro & iScanPlus 开发包",
+      "download_url": "https://idataaftersales.github.io/idata-docs/开发包/iScanPro_iScanPlus开发包%E3%80%90V2.0-20241224%E3%80%91.zip",
+      "tags": [
+        "iScanPro",
+        "iScanPlus",
+        "开发包"
+      ]
+    },
+    {
+      "id": "pkg-003",
+      "category": "TSPL指令集",
+      "name": "D400&Z400系列（TSPL指令集）",
+      "year": "2024",
+      "version": "V1.0",
+      "format": "zip",
+      "filename": "iData D400&Z400系列开发包.zip",
+      "path": "开发包/iData D400&Z400系列开发包.zip",
+      "size": "21MB",
+      "description": "D400和Z400系列TSPL指令集开发文档",
+      "download_url": "https://idataaftersales.github.io/idata-docs/开发包/iData%20D400%26Z400%E7%B3%BB%E5%88%97%E5%BC%80%E5%8F%91%E5%8C%85.zip",
+      "tags": [
+        "TSPL",
+        "D400",
+        "Z400",
+        "指令集"
+      ]
+    }
+  ]
+}
