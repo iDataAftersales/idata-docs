@@ -886,6 +886,10 @@ function parseFilename(filename) {
             else { year = new Date().getFullYear().toString(); version = 'V1.0'; }
         }
     }
+            if (m) { year = m[1]; version = 'V1.0'; }
+            else { year = new Date().getFullYear().toString(); version = 'V1.0'; }
+        }
+    }
 
     // Smart series matching (sorted by length desc)
     let series = '其他';
@@ -930,15 +934,27 @@ function confirmDocUpload() {
         showToast('⚠️ 请先选择文件', '#f44336');
         return;
     }
-    const count = pendingUploadDocs.length;
+    let added = 0, skipped = 0;
     pendingUploadDocs.forEach(d => {
+        // Dedup: skip if filename already exists in DB
+        if (DB.some(existing => existing.filename === d.filename)) {
+            skipped++;
+            return;
+        }
         const { file, ...doc } = d;
         DB.push(doc);
+        added++;
     });
-    updateSeriesFilter();
-    renderStats();
-    renderDocs();
-    showToast('✅ 已添加 ' + count + ' 个文档');
+    if (added === 0) {
+        showToast('⚠️ 所有文件已存在，未添加新文档', '#ff9800');
+    } else {
+        updateSeriesFilter();
+        renderStats();
+        renderDocs();
+        let msg = '✅ 已添加 ' + added + ' 个文档';
+        if (skipped > 0) msg += '（跳过 ' + skipped + ' 个已存在）';
+        showToast(msg);
+    }
     pendingUploadDocs = [];
     document.getElementById('uploadPreview').style.display = 'none';
     document.getElementById('uploadConfirmBtn').style.display = 'none';
@@ -1079,7 +1095,7 @@ async function downloadDoc(filename) {
             }
         }
 
-        const blob = new Blob(chunks, { type: 'application/octet-stream' });
+        const blob = new Blob([chunks], { type: 'application/octet-stream' });
         const blobUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = blobUrl;
@@ -1162,7 +1178,7 @@ async function downloadAll() {
                 }
             }
 
-            const blob = new Blob(chunks, { type: 'application/octet-stream' });
+            const blob = new Blob([chunks], { type: 'application/octet-stream' });
             const blobUrl = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = blobUrl;
