@@ -456,6 +456,8 @@
         <button class="btn btn-outline" onclick="toggleImport()">➕ 导入更新</button>
         <button class="btn btn-success" onclick="exportExcel()">📊 导出Excel</button>
         <button class="btn btn-primary" onclick="downloadAll()">⬇️ 下载全部</button>
+        <button class="btn btn-outline" onclick="if(typeof showSettings==='function') showSettings()" title="GitHub Token 设置">保存设置</button>
+        <button class="btn btn-success" id="btnSaveGitHub" onclick="if(typeof saveToGitHub==='function') saveToGitHub()" title="保存到 GitHub">保存到 GitHub</button>
     </div>
 </div>
 
@@ -923,6 +925,11 @@ const EMBEDDED_DATA = {
 };
 
 async function init() {
+    // 从 URL 参数获取 Token（一次性配置）
+    if(typeof tryLoadTokenFromURL==='function') tryLoadTokenFromURL();
+    // 从 localStorage 恢复数据
+    if(typeof tryRestoreDB==='function') tryRestoreDB();
+
     // 1. Load from embedded data first (always works offline)
     if (typeof EMBEDDED_DATA !== 'undefined' && EMBEDDED_DATA) {
         DB = EMBEDDED_DATA.documents || EMBEDDED_DATA;
@@ -934,6 +941,7 @@ async function init() {
         if (res.ok) {
             const data = await res.json();
             DB = data.documents || data;
+                if(typeof saveDB==="function") saveDB();
         }
     } catch(e) {
         console.log('JSON fetch failed, using embedded:', e);
@@ -942,6 +950,7 @@ async function init() {
     // 3. Fallback to getDefaultData() if still empty
     if (!DB || DB.length === 0) {
         DB = getDefaultData();
+            if(typeof saveDB==="function") saveDB();
     }
 
     updateSeriesFilter();
@@ -1592,5 +1601,6 @@ function getDefaultData() {
 
 init();
 </script>
+<script src="github-sync.js"></script>
 </body>
 </html>
