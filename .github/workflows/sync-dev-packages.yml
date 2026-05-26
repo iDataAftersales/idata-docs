@@ -1,28 +1,37 @@
 name: Sync Dev Packages Catalog
 
-# 触发条件：推送到 main 分支，且开发包目录或同步脚本有变更
+# 触发条件
 on:
+  # 推送到 main 分支时触发
   push:
     branches: [main]
     paths:
       - '开发包/**'
       - 'sync_dev_packages.py'
       - 'dev_packages_catalog.json'
+      - '.github/workflows/**'  # 改了 workflow 自己也触发
 
-  # 支持手动触发
+  # 手动触发
   workflow_dispatch:
+
+  # PR 合并到 main 时也触发
+  pull_request:
+    branches: [main]
+    paths:
+      - '开发包/**'
+      - 'sync_dev_packages.py'
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # 需要写权限来 commit & push
+      contents: write
 
     steps:
       - name: Checkout 仓库
         uses: actions/checkout@v4
         with:
-          lfs: true          # 拉取 Git LFS 文件（zip 文件）
+          lfs: true
           fetch-depth: 1
 
       - name: 安装 Git LFS 并拉取大文件
@@ -60,6 +69,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 显示结果
+      - name: 结果
         if: steps.check.outputs.changed == 'false'
         run: echo "✅ 目录无变更，JSON 已是最新"
