@@ -56,6 +56,21 @@
         "Z400",
         "指令集"
       ]
+    },
+    {
+      "id": "pkg-1779776632257-dmbs",
+      "category": "UHF",
+      "name": "UHF超高频开发包-_V2.2",
+      "year": "2026",
+      "version": "V1.0",
+      "tags": [
+        "UHF",
+        "UHF"
+      ],
+      "description": "",
+      "filename": "UHF超高频开发包-_V2.2.zip",
+      "format": "zip",
+      "path": "UHF超高频开发包-_V2.2.zip"
     }
   ]
 }
