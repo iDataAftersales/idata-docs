@@ -924,6 +924,23 @@ const EMBEDDED_DATA = {
   ]
 };
 
+// GitHub 同步辅助函数（内联定义，确保 init() 可调用）
+function tryLoadTokenFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get('token');
+    if (t && t.startsWith('ghp_')) {
+        localStorage.setItem('github_token', t);
+        if(typeof showToast==='function') showToast('Token 已从 URL 自动配置');
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
+function tryRestoreDBFromLocalStorage() {
+    try {
+        const saved = localStorage.getItem('kb_db_backup');
+        if (saved) { DB = JSON.parse(saved); console.log('[KB] 从 localStorage 恢复', DB.length, '条'); }
+    } catch(e) { console.warn('[KB] localStorage 恢复失败', e); }
+}
+
 async function init() {
     // 从 URL 参数获取 Token（一次性配置）
     if(typeof tryLoadTokenFromURL==='function') tryLoadTokenFromURL();
