@@ -338,6 +338,16 @@ const EMBEDDED_DATA = {
 };
 
 async function init() {
+    // 从 URL 参数获取 Token（一次性配置，配置后自动清除 URL 中的 token）
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlToken = urlParams.get('token');
+    if (urlToken && urlToken.startsWith('ghp_')) {
+        localStorage.setItem('github_token', urlToken);
+        showToast('✅ Token 已从 URL 自动配置（末尾 ' + urlToken.slice(-4) + '）');
+        // 清除 URL 中的 token 参数，避免泄露
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     // 1. Load from embedded data first (always works offline)
     if (typeof EMBEDDED_DATA !== 'undefined' && EMBEDDED_DATA) {
         DB = EMBEDDED_DATA.packages || EMBEDDED_DATA;
