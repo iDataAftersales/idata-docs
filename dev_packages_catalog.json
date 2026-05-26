@@ -71,6 +71,20 @@
       "filename": "UHF超高频开发包-_V2.2.zip",
       "format": "zip",
       "path": "UHF超高频开发包-_V2.2.zip"
+    },
+    {
+      "id": "pkg-1779776723376-9oxf",
+      "category": "示例代码",
+      "name": "T2D 身份证硬解IDCardReaderSample",
+      "year": "2026",
+      "version": "V1.0",
+      "tags": [
+        "示例代码"
+      ],
+      "description": "",
+      "filename": "T2D 身份证硬解IDCardReaderSample.zip",
+      "format": "zip",
+      "path": "T2D 身份证硬解IDCardReaderSample.zip"
     }
   ]
 }
