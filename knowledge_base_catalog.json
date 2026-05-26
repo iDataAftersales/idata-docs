@@ -357,6 +357,20 @@
       "filename": "CN&EN_iData M300使用说明书_2022V1.0.pdf",
       "format": "pdf",
       "path": "CN&EN_iData M300使用说明书_2022V1.0.pdf"
+    },
+    {
+      "id": "CNEN-1779785266217-e35q",
+      "series": "其他",
+      "name": "CN&EN_iData D400使用说明书",
+      "year": "2022",
+      "version": "V1.0",
+      "tags": [
+        "其他",
+        "说明书"
+      ],
+      "filename": "CN&EN_iData D400使用说明书_2022V1.0.pdf",
+      "format": "pdf",
+      "path": "CN&EN_iData D400使用说明书_2022V1.0.pdf"
     }
   ]
 }
