@@ -1,0 +1,65 @@
+name: Sync Dev Packages Catalog
+
+# 触发条件：推送到 main 分支，且开发包目录或同步脚本有变更
+on:
+  push:
+    branches: [main]
+    paths:
+      - '开发包/**'
+      - 'sync_dev_packages.py'
+      - 'dev_packages_catalog.json'
+
+  # 支持手动触发
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 需要写权限来 commit & push
+
+    steps:
+      - name: Checkout 仓库
+        uses: actions/checkout@v4
+        with:
+          lfs: true          # 拉取 Git LFS 文件（zip 文件）
+          fetch-depth: 1
+
+      - name: 安装 Git LFS 并拉取大文件
+        run: |
+          git lfs install
+          git lfs pull
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 运行同步脚本（更新 JSON）
+        run: python sync_dev_packages.py
+
+      - name: 检查 JSON 是否有变更
+        id: check
+        run: |
+          git add dev_packages_catalog.json
+          if git diff --cached --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ 无变更，跳过提交"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "✅ JSON 有变更，准备提交"
+          fi
+
+      - name: 提交并推送更新
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "sync: 自动更新开发包目录 [skip ci]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 显示结果
+        if: steps.check.outputs.changed == 'false'
+        run: echo "✅ 目录无变更，JSON 已是最新"
