@@ -345,33 +345,18 @@
       ]
     },
     {
-      "id": "J20-1779782516239-dtz4",
+      "id": "CNEN-1779782578271-kw74",
       "series": "其他",
-      "name": "CN_iData J20有线用户设置手册",
-      "year": "2024",
-      "version": "V1.3",
-      "tags": [
-        "其他",
-        "设置手册",
-        "有线"
-      ],
-      "filename": "CN_iData J20有线用户设置手册_2024V1.3.pdf",
-      "format": "pdf",
-      "path": "CN_iData J20有线用户设置手册_2024V1.3.pdf"
-    },
-    {
-      "id": "T1-1779782516239-4s7k",
-      "series": "T系列",
-      "name": "CN_iData T1 UHF 使用说明书",
-      "year": "2025",
+      "name": "CN&EN_iData M300使用说明书",
+      "year": "2022",
       "version": "V1.0",
       "tags": [
-        "T系列",
+        "其他",
         "说明书"
       ],
-      "filename": "CN_iData T1 UHF 使用说明书_2025V1.0.docx",
-      "format": "docx",
-      "path": "CN_iData T1 UHF 使用说明书_2025V1.0.docx"
+      "filename": "CN&EN_iData M300使用说明书_2022V1.0.pdf",
+      "format": "pdf",
+      "path": "CN&EN_iData M300使用说明书_2022V1.0.pdf"
     }
   ]
 }
