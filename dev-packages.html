@@ -107,6 +107,22 @@
         .dl-progress-bar { height: 8px; background: var(--gray); border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
         .dl-progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), #7c4dff); border-radius: 4px; width: 0%; transition: width 0.3s; }
         .dl-progress-info { display: flex; justify-content: space-between; font-size: 0.78em; color: var(--text-light); }
+
+        /* Settings Modal */
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.4); z-index: 9999; display: none; align-items: center; justify-content: center; }
+        .modal-overlay.show { display: flex; }
+        .modal-box { background: white; border-radius: 14px; padding: 28px; width: 460px; max-width: 92vw; box-shadow: 0 12px 40px rgba(0,0,0,0.18); }
+        .modal-title { font-size: 1.1em; font-weight: 700; color: var(--primary-dark); margin-bottom: 16px; }
+        .modal-desc { font-size: 0.88em; color: var(--text-light); margin-bottom: 18px; line-height: 1.6; }
+        .modal-input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95em; outline: none; font-family: inherit; margin-bottom: 14px; }
+        .modal-input:focus { border-color: var(--primary); }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .token-saved { font-size: 0.82em; color: var(--success); margin-bottom: 12px; }
+        .github-status { font-size: 0.82em; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; }
+        .github-status.ok { background: #e8f5e9; color: #2e7d32; }
+        .github-status.err { background: #fce4ec; color: #c62828; }
+        .btn-ghost { background: none; border: 1px solid var(--border); color: var(--text-light); }
+        .btn-ghost:hover { background: var(--gray); }
         .no-result { text-align: center; padding: 60px; color: var(--text-light); font-size: 1em; }
         .footer { text-align: center; padding: 30px 20px; color: var(--text-light); font-size: 0.88em; border-top: 1px solid var(--border); margin-top: 20px; }
         .nav-links { margin-top: 10px; display: flex; gap: 15px; justify-content: center; }
@@ -151,8 +167,9 @@
         </select>
         <button class="btn btn-outline" onclick="toggleImport()">➕ 上传开发包</button>
         <button class="btn btn-success" onclick="exportExcel()">📊 导出Excel</button>
-        <button class="btn btn-warning" onclick="exportCatalog()">📋 导出目录</button>
-        <button class="btn btn-primary" onclick="downloadAll()">⬇️ 下载全部</button>
+        <button class="btn btn-warning" onclick="showSettings()">⚙️ 保存设置</button>
+        <button class="btn btn-primary" onclick="saveToGitHub()">💾 保存到 GitHub</button>
+        <button class="btn btn-outline" onclick="downloadAll()">⬇️ 下载全部</button>
     </div>
 </div>
 
@@ -345,6 +362,14 @@ async function init() {
     updateCategoryFilter();
     renderStats();
     renderPackages();
+
+    // 从 localStorage 加载（作为备份/离线使用）
+    const lsLoaded = loadFromLocalStorage();
+    if (lsLoaded) {
+        updateCategoryFilter();
+        renderStats();
+        renderPackages();
+    }
 }
 
 // ==================== RENDER ====================
@@ -798,29 +823,6 @@ function exportExcel() {
     showToast('✅ 已导出 Excel：iData开发包清单_' + today + '.xlsx');
 }
 
-// ==================== EXPORT CATALOG ====================
-function exportCatalog() {
-    const catalog = {
-        version: '1.0',
-        lastUpdated: new Date().toISOString().split('T')[0],
-        description: 'iData 开发包清单',
-        packages: DB
-    };
-    const json = JSON.stringify(catalog, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'dev_packages_catalog.json';
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-        if (a.parentNode) document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }, 500);
-    showToast('✅ 已导出 dev_packages_catalog.json，请替换仓库中同名文件并推送');
-}
 
 // ==================== DOWNLOAD SINGLE PACKAGE ====================
 async function downloadPkg(filename) {
@@ -988,7 +990,204 @@ function getDefaultData() {
     return [];
 }
 
+
+// ==================== LOCAL STORAGE & GITHUB SAVE ====================
+const GITHUB_REPO = 'iDataAftersales/idata-docs';
+const CATALOG_PATH = 'dev_packages_catalog.json';
+
+// 从 localStorage 加载数据
+function loadFromLocalStorage() {
+    try {
+        const saved = localStorage.getItem('dev_packages_db');
+        if (saved) {
+            const data = JSON.parse(saved);
+            if (Array.isArray(data) && data.length > 0) {
+                DB = data;
+                console.log('[LocalStorage] 已加载', data.length, '个开发包');
+                return true;
+            }
+        }
+    } catch(e) {
+        console.warn('[LocalStorage] 加载失败:', e.message);
+    }
+    return false;
+}
+
+// 保存数据到 localStorage
+function saveToLocalStorage() {
+    try {
+        localStorage.setItem('dev_packages_db', JSON.stringify(DB));
+        console.log('[LocalStorage] 已保存', DB.length, '个开发包');
+    } catch(e) {
+        console.warn('[LocalStorage] 保存失败:', e.message);
+    }
+}
+
+// 获取 GitHub Token
+function getToken() {
+    return localStorage.getItem('github_token') || '';
+}
+
+// 显示设置弹窗
+function showSettings() {
+    const modal = document.getElementById('settingsModal');
+    const statusDiv = document.getElementById('tokenStatus');
+    const token = getToken();
+    
+    if (token) {
+        statusDiv.innerHTML = '<div class="token-saved">✅ Token 已保存（••••' + token.slice(-4) + '），可直接「保存到 GitHub」</div>';
+        document.getElementById('tokenInput').value = '';
+    } else {
+        statusDiv.innerHTML = '<div class="github-status err">⚠️ 未配置 Token，请先输入并保存</div>';
+    }
+    
+    modal.classList.add('show');
+    document.getElementById('tokenInput').focus();
+}
+
+// 隐藏设置弹窗
+function hideSettings() {
+    document.getElementById('settingsModal').classList.remove('show');
+}
+
+// 保存 Token 到 localStorage
+function saveToken() {
+    const token = document.getElementById('tokenInput').value.trim();
+    const statusDiv = document.getElementById('tokenStatus');
+    
+    if (!token) {
+        statusDiv.innerHTML = '<div class="github-status err">⚠️ Token 不能为空</div>';
+        return;
+    }
+    if (!token.startsWith('ghp_')) {
+        statusDiv.innerHTML = '<div class="github-status err">⚠️ Token 应以 ghp_ 开头，请检查</div>';
+        return;
+    }
+    
+    localStorage.setItem('github_token', token);
+    statusDiv.innerHTML = '<div class="token-saved">✅ Token 已保存（••••' + token.slice(-4) + '）</div>';
+    document.getElementById('tokenInput').value = '';
+    showToast('✅ GitHub Token 已保存，可点击「💾 保存到 GitHub」');
+}
+
+// 清除 Token
+function removeToken() {
+    localStorage.removeItem('github_token');
+    document.getElementById('tokenStatus').innerHTML = '<div class="github-status err">⚠️ Token 已清除，请重新输入</div>';
+    document.getElementById('tokenInput').value = '';
+    showToast('🗑️ GitHub Token 已清除');
+}
+
+// Base64 编码（支持 UTF-8）
+function base64Encode(str) {
+    const bytes = new TextEncoder().encode(str);
+    let binary = '';
+    bytes.forEach(b => binary += String.fromCharCode(b));
+    return btoa(binary);
+}
+
+// 保存到 GitHub
+async function saveToGitHub() {
+    const token = getToken();
+    if (!token) {
+        showToast('⚠️ 请先点击「⚙️ 保存设置」输入 GitHub Token', '#ff9800');
+        setTimeout(() => showSettings(), 500);
+        return;
+    }
+
+    showToast('⏳ 正在保存到 GitHub，请稍候...', '#2196f3');
+
+    try {
+        // 1. 获取当前文件的 SHA
+        const getUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${CATALOG_PATH}`;
+        const getResp = await fetch(getUrl, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
+
+        let sha = '';
+        if (getResp.ok) {
+            const getData = await getResp.json();
+            sha = getData.sha;
+        }
+
+        // 2. 准备提交内容
+        const catalog = {
+            version: '1.0',
+            lastUpdated: new Date().toISOString().split('T')[0],
+            description: 'iData 开发包清单',
+            packages: DB
+        };
+        const jsonContent = JSON.stringify(catalog, null, 2);
+        const contentB64 = base64Encode(jsonContent);
+
+        // 3. 提交到 GitHub
+        const putBody = {
+            message: `update: 更新开发包目录（共 ${DB.length} 个）`,
+            content: contentB64,
+            branch: 'main'
+        };
+        if (sha) putBody.sha = sha;
+
+        const putResp = await fetch(getUrl, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(putBody)
+        });
+
+        if (!putResp.ok) {
+            const errData = await putResp.json();
+            throw new Error(errData.message || `HTTP ${putResp.status}`);
+        }
+
+        showToast('✅ 已成功保存到 GitHub！页面将在 1~2 分钟后自动更新');
+        
+        // 同时更新 EMBEDDED_DATA
+        if (typeof EMBEDDED_DATA !== 'undefined') {
+            EMBEDDED_DATA.packages = DB;
+            EMBEDDED_DATA.lastUpdated = new Date().toISOString().split('T')[0];
+        }
+
+    } catch(e) {
+        console.error('GitHub save error:', e);
+        if (e.message.includes('401') || e.message.includes('403')) {
+            showToast('❌ Token 无效或已过期，请重新配置', '#f44336');
+            localStorage.removeItem('github_token');
+            setTimeout(() => showSettings(), 500);
+        } else {
+            showToast('❌ 保存失败：' + e.message, '#f44336');
+        }
+    }
+}
+
+// 在 init() 末尾加载 localStorage 数据
+const _origInit = init;
+
 init();
 </script>
+<!-- 保存设置弹窗 -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal-box">
+        <div class="modal-title">⚙️ 保存到 GitHub 设置</div>
+        <div class="modal-desc">
+            配置 GitHub Token 后，点击「💾 保存到 GitHub」即可直接将开发包目录提交到仓库，无需手动下载和上传。<br><br>
+            <b>如何获取 Token：</b><br>
+            1. 打开 <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens/new</a><br>
+            2. 勾选 <b>repo</b> 权限（完整仓库访问）<br>
+            3. 点击「Generate token」复制保存（以 <b>ghp_</b> 开头）<br><br>
+            <b>离线备份：</b>数据同时保存在浏览器本地，刷新不丢失。
+        </div>
+        <div id="tokenStatus"></div>
+        <input class="modal-input" id="tokenInput" type="password" placeholder="粘贴 GitHub Token（ghp_ 开头）" />
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="removeToken()">🗑️ 清除 Token</button>
+            <button class="btn btn-outline" onclick="hideSettings()">取消</button>
+            <button class="btn btn-primary" onclick="saveToken()">💾 保存 Token</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
