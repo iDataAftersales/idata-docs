@@ -5,7 +5,19 @@ const GITHUB_BRANCH = "main";
 const GITHUB_CATALOG = "knowledge_base_catalog.json";
 
 function kb_saveDB() {
-    try { localStorage.setItem("kb_db_backup", JSON.stringify(DB)); } catch(e) {}
+    try {
+        const catalog = { version:"1.0", lastUpdated:new Date().toISOString().split("T")[0], description:"iData 设备说明书知识库", documents:DB };
+        localStorage.setItem("kb_catalog_backup", JSON.stringify(catalog));
+        localStorage.setItem("kb_db_backup", JSON.stringify(DB));
+    } catch(e) {}
+}
+// 获取 localStorage 中缓存的 catalog（含 lastUpdated）
+function kb_getCachedCatalog() {
+    try {
+        const raw = localStorage.getItem("kb_catalog_backup");
+        if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return null;
 }
 
 function kb_loadToken() { return localStorage.getItem(GITHUB_TOKEN_KEY) || ""; }

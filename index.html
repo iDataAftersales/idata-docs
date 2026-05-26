@@ -936,8 +936,19 @@ function tryLoadTokenFromURL() {
 }
 function tryRestoreDBFromLocalStorage() {
     try {
-        const saved = localStorage.getItem('kb_db_backup');
-        if (saved) { DB = JSON.parse(saved); console.log('[KB] 从 localStorage 恢复', DB.length, '条'); }
+        const saved = localStorage.getItem('kb_catalog_backup') || localStorage.getItem('kb_db_backup');
+        if (saved) {
+            const catalog = JSON.parse(saved);
+            if (catalog.documents) {
+                DB = catalog.documents;
+                window.__localLastUpdated = catalog.lastUpdated || '2000-01-01';
+                console.log('[KB] 从 localStorage 恢复', DB.length, '条，lastUpdated:', window.__localLastUpdated);
+            } else {
+                DB = catalog; // 兼容旧格式（只有数组）
+                window.__localLastUpdated = '2000-01-01';
+                console.log('[KB] 从 localStorage 恢复（旧格式）', DB.length, '条');
+            }
+        }
     } catch(e) { console.warn('[KB] localStorage 恢复失败', e); }
 }
 
@@ -957,8 +968,17 @@ async function init() {
         const res = await fetch('knowledge_base_catalog.json?' + Date.now());
         if (res.ok) {
             const data = await res.json();
-            DB = data.documents || data;
-                if(typeof saveDB==="function") saveDB();
+            const remoteDocs = data.documents || data;
+            const remoteDate = data.lastUpdated || '2000-01-01';
+            const localDate = window.__localLastUpdated || '2000-01-01';
+            // 只有远程数据更新时才覆盖
+            if (remoteDate >= localDate) {
+                DB = remoteDocs;
+                console.log('[KB] 使用远程数据（', remoteDate, '）');
+            } else {
+                console.log('[KB] 保留本地数据（本地:', localDate, '，远程:', remoteDate, '）');
+            }
+            if(typeof saveDB==="function") saveDB();
         }
     } catch(e) {
         console.log('JSON fetch failed, using embedded:', e);
