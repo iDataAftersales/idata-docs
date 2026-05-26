@@ -151,6 +151,7 @@
         </select>
         <button class="btn btn-outline" onclick="toggleImport()">➕ 上传开发包</button>
         <button class="btn btn-success" onclick="exportExcel()">📊 导出Excel</button>
+        <button class="btn btn-warning" onclick="exportCatalog()">📋 导出目录</button>
         <button class="btn btn-primary" onclick="downloadAll()">⬇️ 下载全部</button>
     </div>
 </div>
@@ -795,6 +796,30 @@ function exportExcel() {
     const today = new Date().toISOString().split('T')[0];
     XLSX.writeFile(wb, 'iData开发包清单_' + today + '.xlsx');
     showToast('✅ 已导出 Excel：iData开发包清单_' + today + '.xlsx');
+}
+
+// ==================== EXPORT CATALOG ====================
+function exportCatalog() {
+    const catalog = {
+        version: '1.0',
+        lastUpdated: new Date().toISOString().split('T')[0],
+        description: 'iData 开发包清单',
+        packages: DB
+    };
+    const json = JSON.stringify(catalog, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dev_packages_catalog.json';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        if (a.parentNode) document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 500);
+    showToast('✅ 已导出 dev_packages_catalog.json，请替换仓库中同名文件并推送');
 }
 
 // ==================== DOWNLOAD SINGLE PACKAGE ====================
